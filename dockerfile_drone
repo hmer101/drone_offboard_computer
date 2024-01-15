@@ -1,0 +1,170 @@
+FROM arm64v8/ubuntu:22.04
+
+# Set a non-interactive shell to avoid prompts during the build
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install required prerequisite packages
+RUN apt-get update \ 
+  && apt-get upgrade -y \
+  && apt-get install -y python3 \
+  && apt-get install -y python3-pip \
+  && apt-get install -y git \
+  && apt-get install -y lsb-release \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install sudo, lsb-release, wget, and other necessary tools for PX4
+RUN apt-get update && apt-get install -y sudo lsb-release wget dmidecode libeigen3-dev libopencv-dev libxml2-utils pkg-config protobuf-compiler gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly gstreamer1.0-libav libgstreamer-plugins-base1.0-dev libimage-exiftool-perl
+
+
+## CLONE REPOS
+# Create a directory to hold the repositories
+WORKDIR /home
+RUN mkdir -p /home/repos
+
+# Argument to pass the SSH private key
+ARG SSH_PRIVATE_KEY
+
+# Authorize SSH Host
+RUN mkdir -p /root/.ssh && \
+    echo "Host github.com\n\tStrictHostKeyChecking no\n" >> /root/.ssh/config
+
+# Add the private key
+RUN echo "$SSH_PRIVATE_KEY" > /root/.ssh/id_rsa && \
+    chmod 600 /root/.ssh/id_rsa
+
+# PX4
+RUN cd /home/repos && git clone -b release/drones git@github.com:hmer101/PX4-Autopilot.git --recursive
+
+RUN chmod +x ./repos/PX4-Autopilot/Tools/setup/ubuntu.sh
+RUN bash ./repos/PX4-Autopilot/Tools/setup/ubuntu.sh
+
+
+## Install ROS2
+# Install locales and set en_US.UTF-8
+RUN apt-get update && \
+    apt-get install -y locales && \
+    locale-gen en_US en_US.UTF-8 && \
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+
+# Install necessary packages
+RUN apt-get install -y software-properties-common && \
+    add-apt-repository universe && \
+    apt-get update && \
+    apt-get install -y curl
+
+# Add the ROS2 repository
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+# Update and install ROS2
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y ros-humble-desktop
+
+# Install additional ROS development tools
+RUN apt-get install -y ros-dev-tools
+
+# Source the ROS2 setup script
+RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+
+
+## Setup Micro-DDS
+RUN cd /home/repos && git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
+RUN cd /home/repos/Micro-XRCE-DDS-Agent && mkdir build 
+RUN cd /home/repos/Micro-XRCE-DDS-Agent/build && cmake .. && make && make install && ldconfig /usr/local/lib/ 
+
+
+## Build ROS2 workspace
+RUN mkdir -p /home/ws_ros2/src/  
+
+# Clone repos
+RUN cd /home/ws_ros2/src/ && \
+    git clone -b release/1.14 https://github.com/PX4/px4_msgs.git --recursive && \
+    git clone -b release/v1.14 https://github.com/PX4/px4_ros_com.git --recursive && \
+    git clone -b humble https://github.com/gazebosim/ros_gz.git --recursive && \
+    #git clone https://github.com/artivis/manif.git --recursive && \
+    #git clone https://github.com/artivis/kalmanif.git --recursive && \
+    #git clone -b release/drones git@github.com:hmer101/slung_pose_estimation.git --recursive #&& \
+    git clone -b release/drones git@github.com:hmer101/swarm_load_carry.git --recursive && \
+    git clone -b release/drones git@github.com:hmer101/swarm_load_carry_interfaces.git --recursive 
+    
+
+RUN cd /home/ws_ros2 && \
+    . /opt/ros/humble/setup.sh && \
+    export GZ_VERSION=humble && \
+    rosdep init && \
+    rosdep update && \
+    rosdep install -r --from-paths src -i -y --rosdistro humble
+
+
+# Make frame transforms .so
+RUN apt-get install -y libeigen3-dev
+
+RUN cd /home/ws_ros2/src/swarm_load_carry/swarm_load_carry/frame_transforms && \
+    . /opt/ros/humble/setup.sh && \
+    mkdir -p build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../frame_transforms.so
+
+# Build the ROS2 workspace
+RUN apt-get install -y build-essential cmake ros-humble-ros-gz
+
+RUN pip uninstall -y em
+RUN pip install --user -U empy==3.3.4 pyros-genmsg setuptools
+
+# RUN cd /home/ws_ros2 && \ 
+#     . /opt/ros/humble/setup.sh && \
+#     colcon build --packages-select manif kalmanif
+
+RUN cd /home/ws_ros2 && \ 
+    . /opt/ros/humble/setup.sh && \
+    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/kalmanif:$CMAKE_PREFIX_PATH && \
+    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/manif:$CMAKE_PREFIX_PATH && \
+    #. /home/ws_ros2/install/setup.sh && \
+    colcon build #--packages-skip manif kalmanif
+
+
+# Source the ROS2 overlay workspace
+RUN echo "source /home/ws_ros2/install/setup.bash" >> ~/.bashrc
+
+
+# Install packages required to run commands
+RUN apt-get install -y gnome-terminal && apt-get install -y dbus-x11
+
+# Install python packages
+RUN pip install --upgrade pip
+
+
+RUN cd /home/ws_ros2/src/swarm_load_carry && \
+    . /opt/ros/humble/setup.sh && \
+    pip install -r requirements_gcs.txt
+
+
+## Build PX4
+#RUN cd /home/repos/PX4-Autopilot && make px4_sitl
+
+
+# Setup finished. Remove the private GitHub key
+# RUN rm -rf /root/.ssh
+
+
+# Set the entrypoint or command, depending on your use case
+CMD ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /home/ws_ros2/install/setup.bash && ros2 launch swarm_load_carry phys_drone.launch.py"]
+#CMD ["bash"] # Just opens a bash shell. Container closes when you exit the shel
+
+### COMMANDS 
+# Building this dockerfile with ARGS
+# docker build --build-arg SSH_PRIVATE_KEY="$(cat /home/harvey/.ssh/id_ed25519)" -f dockerfile_drone -t drone:first . #--no-cache
+
+# Running dockerfile interactively (useful if using CMD ["bash"])
+# docker run --tty -it drone:first
+
+# GUI Forwarding: docker run --tty -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro -it drone:first
+# Need to run "xhost +" on host machine first
+
+
+
+# NOTE: THIS FILE IS A MODIFIED VERSION OF THE GCS DOCKERFILE. CAN BE REDUCED!
