@@ -22,14 +22,15 @@ WORKDIR /home
 RUN mkdir -p /home/repos
 
 # Argument to pass the SSH private key
-ARG SSH_PRIVATE_KEY
+#ARG SSH_PRIVATE_KEY
+ENV SSH_PRIVATE_KEY_ENV_VAR_GH=PLACEHOLDER
 
 # Authorize SSH Host
 RUN mkdir -p /root/.ssh && \
     echo "Host github.com\n\tStrictHostKeyChecking no\n" >> /root/.ssh/config
 
 # Add the private key
-RUN echo "$SSH_PRIVATE_KEY" > /root/.ssh/id_rsa && \
+RUN echo "$SSH_PRIVATE_KEY_ENV_VAR_GH" > /root/.ssh/id_rsa && \
     chmod 600 /root/.ssh/id_rsa
 
 # PX4
@@ -93,7 +94,7 @@ RUN cd /home/ws_ros2/src/ && \
 RUN cd /home/ws_ros2 && \
     . /opt/ros/humble/setup.sh && \
     export GZ_VERSION=humble && \
-    rosdep init && \
+    rosdep init && \alue or a placeholder value for the environment variable. H
     rosdep update && \
     rosdep install -r --from-paths src -i -y --rosdistro humble
 
@@ -158,6 +159,7 @@ CMD ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /home/ws_ro
 ### COMMANDS 
 # Building this dockerfile with ARGS
 # docker build --build-arg SSH_PRIVATE_KEY="$(cat /home/harvey/.ssh/id_ed25519)" -f dockerfile_drone -t drone:first . #--no-cache
+# When deploying in Balena, use in ENV variable for SSH_PRIVATE_KEY_ENV_VAR_GH instead
 
 # Running dockerfile interactively (useful if using CMD ["bash"])
 # docker run --tty -it drone:first
