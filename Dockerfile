@@ -1,6 +1,6 @@
 FROM arm64v8/ubuntu:22.04
 
-# Set a non-interactive shell to avoid prompts during the build
+# Set a non-interactive shell to avoid prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install required prerequisite packages
@@ -23,7 +23,9 @@ RUN mkdir -p /home/repos
 
 # Argument to pass the SSH private key
 #ARG SSH_PRIVATE_KEY
-ENV SSH_PRIVATE_KEY_ENV_VAR_GH=PLACEHOLDER
+ENV SSH_PRIVATE_KEY_ENV_VAR_GH="b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\nQyNTUxOQAAACD7gB7FKLkuqZmMXROIUri8EwLXEu0cf+mrIjzeBauY8QAAAJib05lGm9OZ\nRgAAAAtzc2gtZWQyNTUxOQAAACD7gB7FKLkuqZmMXROIUri8EwLXEu0cf+mrIjzeBauY8Q\nAAAEDVYapfTsF/wTb0I64xw6O9a/J3oSRc9MJW3AZM8LCrb/uAHsUouS6pmYxdE4hSuLwT\nAtcS7Rx/6asiPN4Fq5jxAAAAD2htZXIxMDFAbWl0LmVkdQECAwQFBg==" 
+
+#PLACEHOLDER
 
 # Authorize SSH Host
 RUN mkdir -p /root/.ssh && \
@@ -94,7 +96,7 @@ RUN cd /home/ws_ros2/src/ && \
 RUN cd /home/ws_ros2 && \
     . /opt/ros/humble/setup.sh && \
     export GZ_VERSION=humble && \
-    rosdep init && \alue or a placeholder value for the environment variable. H
+    rosdep init && \
     rosdep update && \
     rosdep install -r --from-paths src -i -y --rosdistro humble
 
