@@ -85,8 +85,8 @@ RUN mkdir -p /home/ws_ros2/src/
 
 # Clone repos
 RUN cd /home/ws_ros2/src/ && \
-    #release/1.14
-    git clone -b https://github.com/PX4/px4_msgs.git --recursive && \ 
+    #-b release/1.14
+    git clone https://github.com/PX4/px4_msgs.git --recursive && \ 
     # git clone -b release/v1.14 https://github.com/PX4/px4_ros_com.git --recursive && \ 
     # git clone -b humble https://github.com/gazebosim/ros_gz.git --recursive && \
     #git clone https://github.com/artivis/manif.git --recursive && \
