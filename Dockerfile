@@ -155,6 +155,18 @@ RUN cd /home/ws_ros2/src/swarm_load_carry && \
 # Install text editor
 RUN apt-get install -y nano
 
+
+## UPDATES - remember to trigger this section by adding/removing blank lines above
+# Pull in updates
+RUN cd /home/ws_ros2/src/swarm_load_carry && \
+    git pull #--recurse-submodules
+
+# Build updates
+RUN cd /home/ws_ros2 && \ 
+    . /opt/ros/humble/setup.sh && \
+    colcon build --packages-select swarm_load_carry
+
+
 # Set the entrypoint or command, depending on your use case
 CMD ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /home/ws_ros2/install/setup.bash && ros2 launch swarm_load_carry phys_drone.launch.py"]
 
