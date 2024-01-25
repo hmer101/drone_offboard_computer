@@ -152,6 +152,8 @@ RUN cd /home/ws_ros2/src/swarm_load_carry && \
 # Setup finished. Remove the private GitHub key
 # RUN rm -rf /root/.ssh
 
+# Install text editor
+RUN apt-get install -y nano
 
 # Set the entrypoint or command, depending on your use case
 CMD ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /home/ws_ros2/install/setup.bash && ros2 launch swarm_load_carry phys_drone.launch.py"]
