@@ -1,4 +1,5 @@
-FROM arm64v8/ubuntu:22.04
+FROM arm64v8/ubuntu:22.04 
+#as base
 
 # Set a non-interactive shell to avoid prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
@@ -14,13 +15,24 @@ RUN apt-get update \
   && apt-get install -y git \
   && apt-get install -y lsb-release \
   && apt-get install -y openssh-client \
+  && apt-get install -y gnome-terminal \ 
+  && apt-get install -y dbus-x11 \
+  && apt-get install -y libeigen3-dev \
+  && apt-get install -y build-essential cmake \
+  && apt-get install -y nano \
+  && apt-get install -y iproute2 \
   && rm -rf /var/lib/apt/lists/*
+
+#ros-humble-ros-gz
+
+# Install python packages
+RUN pip install --upgrade pip
 
 # Install sudo, lsb-release, wget, and other necessary tools for PX4
 #RUN apt-get update && apt-get install -y sudo lsb-release wget dmidecode libeigen3-dev libopencv-dev libxml2-utils pkg-config protobuf-compiler gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly gstreamer1.0-libav libgstreamer-plugins-base1.0-dev libimage-exiftool-perl
 
 
-## CLONE REPOS
+# Setup for cloning repositories from GitHub
 # Create a directory to hold the repositories
 WORKDIR /home
 RUN mkdir -p /home/repos
@@ -37,14 +49,21 @@ RUN mkdir -p /root/.ssh && \
     ssh-add /root/.ssh/id_ed25519
 
 
-# PX4
+## PX4
+#FROM base as px4-setup
+# Setup PX4
 #RUN cd /home/repos && git clone -b release/drones git@github.com:hmer101/PX4-Autopilot.git --recursive
 
 #RUN chmod +x ./repos/PX4-Autopilot/Tools/setup/ubuntu.sh
 #RUN bash ./repos/PX4-Autopilot/Tools/setup/ubuntu.sh
 
+# Build PX4
+#RUN cd /home/repos/PX4-Autopilot && make px4_sitl
+
 
 ## Install ROS2
+#FROM px4-setup as ros2-install
+#FROM base as ros2-install
 # Install locales and set en_US.UTF-8
 RUN apt-get update && \
     apt-get install -y locales && \
@@ -83,18 +102,26 @@ RUN cd /home/repos/Micro-XRCE-DDS-Agent/build && cmake .. && make && make instal
 ## Build ROS2 workspace
 RUN mkdir -p /home/ws_ros2/src/  
 
+#FROM ros2-install as ros2-ws-deps
 # Clone repos
 RUN cd /home/ws_ros2/src/ && \
     git clone -b release/drones git@github.com:hmer101/px4_msgs.git --recursive && \
-    # git clone -b release/v1.14 https://github.com/PX4/px4_ros_com.git --recursive && \ 
-    # git clone -b humble https://github.com/gazebosim/ros_gz.git --recursive && \
+    git clone -b release/drones git@github.com:hmer101/drone_misc.git --recursive
+
+    #&& \
+    #git clone -b release/v1.14 https://github.com/PX4/px4_ros_com.git --recursive && \ 
+    #git clone -b humble https://github.com/gazebosim/ros_gz.git --recursive && \
     #git clone https://github.com/artivis/manif.git --recursive && \
     #git clone https://github.com/artivis/kalmanif.git --recursive && \
-    #git clone -b release/drones git@github.com:hmer101/slung_pose_estimation.git --recursive #&& \
-    git clone -b release/drones git@github.com:hmer101/swarm_load_carry.git --recursive && \
-    git clone -b release/drones git@github.com:hmer101/swarm_load_carry_interfaces.git --recursive 
-    
 
+    #git clone -b release/drones git@github.com:hmer101/slung_pose_estimation.git --recursive #&& \
+    #git clone -b release/drones git@github.com:hmer101/swarm_load_carry.git --recursive && \
+    #git clone -b release/drones git@github.com:hmer101/swarm_load_carry_interfaces.git --recursive 
+
+# Cloning finished. Remove the private GitHub key
+# RUN rm -rf /root/.ssh
+
+# Install dependencies
 RUN cd /home/ws_ros2 && \
     . /opt/ros/humble/setup.sh && \
     export GZ_VERSION=humble && \
@@ -102,10 +129,32 @@ RUN cd /home/ws_ros2 && \
     rosdep update && \
     rosdep install -r --from-paths src -i -y --rosdistro humble
 
+RUN cd /home/ws_ros2/src/drone_misc && \
+    . /opt/ros/humble/setup.sh && \
+    pip install -r requirements_drones.txt
 
+RUN pip uninstall -y em
+RUN pip install --user -U empy==3.3.4 pyros-genmsg setuptools
+
+# Build first part of workspace
+RUN cd /home/ws_ros2 && \ 
+    . /opt/ros/humble/setup.sh && \
+    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/kalmanif:$CMAKE_PREFIX_PATH && \
+    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/manif:$CMAKE_PREFIX_PATH && \
+    #. /home/ws_ros2/install/setup.sh && \
+    colcon build
+
+
+# Copy in frequently changed repos
+#FROM ros2-ws-deps as ros2-ws-copy
+COPY ws_ros2/src/swarm_load_carry /home/ws_ros2/src/swarm_load_carry/
+COPY ws_ros2/src/swarm_load_carry_interfaces /home/ws_ros2/src/swarm_load_carry_interfaces/
+#--from=ros2-ws-deps
+
+
+# Build remaining parts of colcon workspace
+#FROM ros2-ws-copy as ros2-ws-build
 # Make frame transforms .so
-RUN apt-get install -y libeigen3-dev
-
 RUN cd /home/ws_ros2/src/swarm_load_carry/swarm_load_carry/frame_transforms && \
     . /opt/ros/humble/setup.sh && \
     mkdir -p build && \
@@ -114,58 +163,13 @@ RUN cd /home/ws_ros2/src/swarm_load_carry/swarm_load_carry/frame_transforms && \
     make && \
     cp frame_transforms.cpython-310-aarch64-linux-gnu.so ../../frame_transforms.so
 
-# Build the ROS2 workspace
-RUN apt-get install -y build-essential cmake ros-humble-ros-gz
-
-RUN pip uninstall -y em
-RUN pip install --user -U empy==3.3.4 pyros-genmsg setuptools
-
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
-    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/kalmanif:$CMAKE_PREFIX_PATH && \
-    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/manif:$CMAKE_PREFIX_PATH && \
-    #. /home/ws_ros2/install/setup.sh && \
-    colcon build #--packages-skip manif kalmanif
+    colcon build --packages-select swarm_load_carry_interfaces swarm_load_carry 
 
 
 # Source the ROS2 overlay workspace
 RUN echo "source /home/ws_ros2/install/setup.bash" >> ~/.bashrc
-
-
-# Install packages required to run commands
-RUN apt-get install -y gnome-terminal && apt-get install -y dbus-x11
-
-# Install python packages
-RUN pip install --upgrade pip
-
-
-RUN cd /home/ws_ros2/src/swarm_load_carry && \
-    . /opt/ros/humble/setup.sh && \
-    pip install -r requirements_drones.txt
-
-
-## Build PX4
-#RUN cd /home/repos/PX4-Autopilot && make px4_sitl
-
-
-# Setup finished. Remove the private GitHub key
-# RUN rm -rf /root/.ssh
-
-# Install text editor
-RUN apt-get install -y nano && \
-    apt-get install -y iproute2
-
-
-## UPDATES - remember to trigger this section by adding/removing blank lines above
-# Pull in updates
-# RUN cd /home/ws_ros2/src/swarm_load_carry && \
-#     git pull #--recurse-submodules
-
-# # Build updates
-# RUN cd /home/ws_ros2 && \ 
-#     . /opt/ros/humble/setup.sh && \
-#     colcon build --packages-select swarm_load_carry
-
 
 # Set the entrypoint or command, depending on your use case
 CMD ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /home/ws_ros2/install/setup.bash && ros2 launch swarm_load_carry phys_drone.launch.py"]
@@ -183,5 +187,3 @@ CMD ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /home/ws_ro
 # Need to run "xhost +" on host machine first
 
 # Building with balena: balena push slung_load_x500
-
-# NOTE: THIS FILE IS A MODIFIED VERSION OF THE GCS DOCKERFILE. CAN BE REDUCED!
