@@ -168,6 +168,23 @@ RUN cd /home/ws_ros2 && \
     colcon build --packages-select swarm_load_carry_interfaces swarm_load_carry 
 
 
+# Install realsense camera software
+RUN mkdir -p /etc/apt/keyrings && \ 
+    curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp | sudo tee /etc/apt/keyrings/librealsense.pgp > /dev/null && \
+    apt-get install -y apt-transport-https && \
+    echo "deb [signed-by=/etc/apt/keyrings/librealsense.pgp] https://librealsense.intel.com/Debian/apt-repo `lsb_release -cs` main" | \ tee /etc/apt/sources.list.d/librealsense.list && \
+    apt-get update && \
+    apt-get install -y librealsense2-dkms && \
+    apt-get install -y librealsense2-utils && \
+    apt-get install -y librealsense2-dev && \
+    apt-get install -y librealsense2-dbg
+
+
+RUN cd /home/ws_ros2 && \ 
+    . /opt/ros/humble/setup.sh && \
+    apt install -y ros-humble-realsense2-*
+
+
 # Source the ROS2 overlay workspace
 RUN echo "source /home/ws_ros2/install/setup.bash" >> ~/.bashrc
 
