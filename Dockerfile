@@ -38,15 +38,15 @@ WORKDIR /home
 RUN mkdir -p /home/repos
 
 # Argument to pass the SSH private key
-ENV SSH_PRIVATE_KEY_ENV_VAR_GH="REMOVED_PRIVATE_KEY"
+#ENV SSH_PRIVATE_KEY_ENV_VAR_GH="REMOVED_PRIVATE_KEY"
 
 # Authorize SSH Host, add the private key and start ssh-agent
-RUN mkdir -p /root/.ssh && \
-    echo "Host github.com\n\tStrictHostKeyChecking no\n" >> /root/.ssh/config && \
-    echo "REMOVED_PRIVATE_KEY\n"> /root/.ssh/id_ed25519 && \ 
-    chmod 600 /root/.ssh/id_ed25519 && \
-    eval $(ssh-agent -s) && \
-    ssh-add /root/.ssh/id_ed25519
+# RUN mkdir -p /root/.ssh && \
+#     echo "Host github.com\n\tStrictHostKeyChecking no\n" >> /root/.ssh/config && \
+#     echo "REMOVED_PRIVATE_KEY\n"> /root/.ssh/id_ed25519 && \ 
+#     chmod 600 /root/.ssh/id_ed25519 && \
+#     eval $(ssh-agent -s) && \
+#     ssh-add /root/.ssh/id_ed25519
 
 
 ## PX4
@@ -65,48 +65,48 @@ RUN mkdir -p /root/.ssh && \
 #FROM px4-setup as ros2-install
 #FROM base as ros2-install
 # Install locales and set en_US.UTF-8
-RUN apt-get update && \
-    apt-get install -y locales && \
-    locale-gen en_US en_US.UTF-8 && \
-    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-ENV LANG=en_US.UTF-8
+# RUN apt-get update && \
+#     apt-get install -y locales && \
+#     locale-gen en_US en_US.UTF-8 && \
+#     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+# ENV LANG=en_US.UTF-8
 
 # Install necessary packages
-RUN apt-get install -y software-properties-common && \
-    add-apt-repository universe && \
-    apt-get update && \
-    apt-get install -y curl
+# RUN apt-get install -y software-properties-common && \
+#     add-apt-repository universe && \
+#     apt-get update && \
+#     apt-get install -y curl
 
 # Add the ROS2 repository
-RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
+# RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
+#     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
 # Update and install ROS2
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y ros-humble-desktop
+# RUN apt-get update && \
+#     apt-get upgrade -y && \
+#     apt-get install -y ros-humble-desktop
 
 # Install additional ROS development tools
-RUN apt-get install -y ros-dev-tools
+# RUN apt-get install -y ros-dev-tools
 
 # Source the ROS2 setup script
-RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+# RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 
 
 ## Setup Micro-DDS
-RUN cd /home/repos && git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
-RUN cd /home/repos/Micro-XRCE-DDS-Agent && mkdir build 
-RUN cd /home/repos/Micro-XRCE-DDS-Agent/build && cmake .. && make && make install && ldconfig /usr/local/lib/ 
+# RUN cd /home/repos && git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
+# RUN cd /home/repos/Micro-XRCE-DDS-Agent && mkdir build 
+# RUN cd /home/repos/Micro-XRCE-DDS-Agent/build && cmake .. && make && make install && ldconfig /usr/local/lib/ 
 
 
 ## Build ROS2 workspace
 RUN mkdir -p /home/ws_ros2/src/  
 
 #FROM ros2-install as ros2-ws-deps
-# Clone repos
-RUN cd /home/ws_ros2/src/ && \
-    git clone -b release/drones git@github.com:hmer101/px4_msgs.git --recursive && \
-    git clone -b release/drones git@github.com:hmer101/drone_misc.git --recursive
+####### Clone repos
+# RUN cd /home/ws_ros2/src/ && \
+#     git clone -b release/drones git@github.com:hmer101/px4_msgs.git --recursive && \
+#     git clone -b release/drones git@github.com:hmer101/drone_misc.git --recursive
 
     #&& \
     #git clone -b release/v1.14 https://github.com/PX4/px4_ros_com.git --recursive && \ 
@@ -121,53 +121,23 @@ RUN cd /home/ws_ros2/src/ && \
 # Cloning finished. Remove the private GitHub key
 # RUN rm -rf /root/.ssh
 
-# Install dependencies
-RUN cd /home/ws_ros2 && \
-    . /opt/ros/humble/setup.sh && \
-    export GZ_VERSION=humble && \
-    rosdep init && \
-    rosdep update && \
-    rosdep install -r --from-paths src -i -y --rosdistro humble
+####### Install dependencies
+# RUN cd /home/ws_ros2 && \
+#     . /opt/ros/humble/setup.sh && \
+#     export GZ_VERSION=humble && \
+#     rosdep init && \
+#     rosdep update && \
+#     rosdep install -r --from-paths src -i -y --rosdistro humble
 
-RUN cd /home/ws_ros2/src/drone_misc && \
-    . /opt/ros/humble/setup.sh && \
-    pip install -r requirements_drones.txt
+# RUN cd /home/ws_ros2/src/drone_misc && \
+#     . /opt/ros/humble/setup.sh && \
+#     pip install -r requirements_drones.txt
 
-RUN pip uninstall -y em
-RUN pip install --user -U empy==3.3.4 pyros-genmsg setuptools
-
-# Build first part of workspace
-RUN cd /home/ws_ros2 && \ 
-    . /opt/ros/humble/setup.sh && \
-    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/kalmanif:$CMAKE_PREFIX_PATH && \
-    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/manif:$CMAKE_PREFIX_PATH && \
-    #. /home/ws_ros2/install/setup.sh && \
-    colcon build
+# RUN pip uninstall -y em
+# RUN pip install --user -U empy==3.3.4 pyros-genmsg setuptools
 
 
-# Copy in frequently changed repos
-#FROM ros2-ws-deps as ros2-ws-copy
-COPY ws_ros2/src/swarm_load_carry /home/ws_ros2/src/swarm_load_carry/
-COPY ws_ros2/src/swarm_load_carry_interfaces /home/ws_ros2/src/swarm_load_carry_interfaces/
-#--from=ros2-ws-deps
-
-
-# Build remaining parts of colcon workspace
-#FROM ros2-ws-copy as ros2-ws-build
-# Make frame transforms .so
-RUN cd /home/ws_ros2/src/swarm_load_carry/swarm_load_carry/frame_transforms && \
-    . /opt/ros/humble/setup.sh && \
-    mkdir -p build && \
-    cd build && \
-    cmake .. && \
-    make && \
-    cp frame_transforms.cpython-310-aarch64-linux-gnu.so ../../frame_transforms.so
-
-RUN cd /home/ws_ros2 && \ 
-    . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select swarm_load_carry_interfaces swarm_load_carry 
-
-
+# REALSENSE CAMERA
 # Install realsense camera software
 RUN mkdir -p /etc/apt/keyrings && \ 
     curl -sSf https://librealsense.intel.com/Debian/librealsense.pgp | sudo tee /etc/apt/keyrings/librealsense.pgp > /dev/null && \
@@ -185,12 +155,48 @@ RUN cd /home/ws_ros2 && \
     apt install -y ros-humble-realsense2-*
 
 
+# Build first part of workspace
+# RUN cd /home/ws_ros2 && \ 
+#     . /opt/ros/humble/setup.sh && \
+#     # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/kalmanif:$CMAKE_PREFIX_PATH && \
+#     # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/manif:$CMAKE_PREFIX_PATH && \
+#     #. /home/ws_ros2/install/setup.sh && \
+#     colcon build
+
+
+# Copy in frequently changed repos
+#FROM ros2-ws-deps as ros2-ws-copy
+COPY ws_ros2/src/swarm_load_carry /home/ws_ros2/src/swarm_load_carry/
+COPY ws_ros2/src/swarm_load_carry_interfaces /home/ws_ros2/src/swarm_load_carry_interfaces/
+#--from=ros2-ws-deps
+
+
+# Build remaining parts of colcon workspace
+#FROM ros2-ws-copy as ros2-ws-build
+# Make frame transforms .so
+# RUN cd /home/ws_ros2/src/swarm_load_carry/swarm_load_carry/frame_transforms && \
+#     . /opt/ros/humble/setup.sh && \
+#     mkdir -p build && \
+#     cd build && \
+#     cmake .. && \
+#     make && \
+#     cp frame_transforms.cpython-310-aarch64-linux-gnu.so ../../frame_transforms.so
+
+# RUN cd /home/ws_ros2 && \ 
+#     . /opt/ros/humble/setup.sh && \
+#     colcon build --packages-select swarm_load_carry_interfaces swarm_load_carry 
+
+
 # Source the ROS2 overlay workspace
 RUN echo "source /home/ws_ros2/install/setup.bash" >> ~/.bashrc
 
 # Set the entrypoint or command, depending on your use case
-CMD ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /home/ws_ros2/install/setup.bash && ros2 launch swarm_load_carry phys_drone.launch.py"]
+#CMD ["/bin/bash", "-c", "source /opt/ros/humble/setup.bash && source /home/ws_ros2/install/setup.bash && ros2 launch swarm_load_carry phys_drone.launch.py"]
+# Copy the startup script
+COPY start.sh /home/ws_ros2/start.sh
 
+# Use the script as the entry point
+CMD ["/home/ws_ros2/start.sh"]
 
 ### COMMANDS 
 # Building this dockerfile with ARGS
