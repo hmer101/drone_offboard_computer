@@ -55,25 +55,13 @@ RUN cd /usr/src/librealsense \
     -DCMAKE_BUILD_TYPE=Release ../ \
  && make -j$(($(nproc)-1)) all \
  && make install
- 
-#ENV DEBIAN_FRONTEND=dialog
-
-
-#RUN find /usr -type d -name 'pyrealsense2*'
-
-
 
 ######################################
 #   librealsense Base Image Stage    #
 ######################################
 FROM ${BASE_IMAGE} as librealsense
-# FROM arm64v8/ubuntu:22.04 
-#as base
-
-# SHELL ["/bin/bash", "-c"]
 
 COPY --from=librealsense-builder /opt/librealsense /usr/local/
-#COPY --from=librealsense-builder /usr/lib/python3/dist-packages/pyrealsense2 /usr/lib/python3/dist-packages/pyrealsense2
 COPY --from=librealsense-builder /usr/src/librealsense/config/99-realsense-libusb.rules /etc/udev/rules.d/
 ENV PYTHONPATH=${PYTHONPATH}:/usr/local/lib
 
@@ -95,10 +83,6 @@ RUN apt-get update \
   && apt-get install -y python3 \
   && apt-get install -y python3-pip \
   && apt-get install -y curl \
-  #&& apt-get install -y coreutils \
-  #&& apt-get install -y software-properties-common \
-  #&& apt-get install -y libusb-1.0-0 \
-  #&& apt-get install -y udev \
   && apt-get install -y git \
   && apt-get install -y gnome-terminal \
   && apt-get install -y lsb-release \
@@ -113,16 +97,10 @@ RUN apt-get update \
   && apt-get install -y iproute2 \
   && apt-get --reinstall install coreutils \
   && rm -rf /var/lib/apt/lists/*
- 
-#ros-humble-ros-gz
 
 
 # Install python packages
 RUN pip install --upgrade pip
-
-# Install sudo, lsb-release, wget, and other necessary tools for PX4
-#RUN apt-get update && apt-get install -y sudo lsb-release wget dmidecode libeigen3-dev libopencv-dev libxml2-utils pkg-config protobuf-compiler gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly gstreamer1.0-libav libgstreamer-plugins-base1.0-dev libimage-exiftool-perl
-
 
 # Setup for cloning repositories from GitHub
 # Create a directory to hold the repositories
@@ -141,45 +119,9 @@ RUN mkdir -p /root/.ssh && \
     ssh-add /root/.ssh/id_ed25519
 
 
-## PX4
-# Setup PX4
-#RUN cd /home/repos && git clone -b release/drones git@github.com:hmer101/PX4-Autopilot.git --recursive
-
-#RUN chmod +x ./repos/PX4-Autopilot/Tools/setup/ubuntu.sh
-#RUN bash ./repos/PX4-Autopilot/Tools/setup/ubuntu.sh
-
-# Build PX4
-#RUN cd /home/repos/PX4-Autopilot && make px4_sitl
-
-
-## Install ROS2
-# Install locales and set en_US.UTF-8
-# RUN apt-get update && \
-#     apt-get install -y locales && \
-#     locale-gen en_US en_US.UTF-8 && \
-#     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-# ENV LANG=en_US.UTF-8
-
-# Install necessary packages
-# RUN apt-get install -y software-properties-common && \
-#     add-apt-repository universe && \
-#     apt-get update && \
-
-# Add the ROS2 repository
-# RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg && \
-#     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null
-
-# Update and install ROS2
-# RUN apt-get update && \
-#     apt-get upgrade -y && \
-#     apt-get install -y ros-humble-desktop
-
-# Install additional ROS development tools
-# RUN apt-get install -y ros-dev-tools
-
+### ROS2
 # Source the ROS2 setup script
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-
 
 ## Setup Micro-DDS
 RUN cd /home/repos && git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
@@ -198,14 +140,6 @@ RUN cd /home/ws_ros2/src/ && \
     git clone -b release/drones git@github.com:hmer101/kalmanif.git --recursive && \
     git clone -b ros2-development https://github.com/IntelRealSense/realsense-ros.git 
 
-    #&& \
-    #git clone -b release/v1.14 https://github.com/PX4/px4_ros_com.git --recursive && \ 
-    #git clone -b humble https://github.com/gazebosim/ros_gz.git --recursive && \
-
-    #git clone -b release/drones git@github.com:hmer101/slung_pose_estimation.git --recursive #&& \
-    #git clone -b release/drones git@github.com:hmer101/swarm_load_carry.git --recursive && \
-    #git clone -b release/drones git@github.com:hmer101/swarm_load_carry_interfaces.git --recursive 
-
 # Cloning finished. Remove the private GitHub key
 # RUN rm -rf /root/.ssh
 
@@ -221,18 +155,7 @@ RUN cd /home/ws_ros2/src/ \
  && rosdep init \
  && rosdep update \
  && rosdep install -i --from-path src --rosdistro humble --skip-keys=librealsense2 -y
- #&& colcon build
- #source /opt/ros/humble/setup.bash
- #  && mkdir src \
-#  && cd src \
- #&& git clone https://github.com/IntelRealSense/realsense-ros.git -b ros2-development \
 
-# RUN cd /home/ws_ros2 && \
-#     . /opt/ros/humble/setup.sh && \
-#     export GZ_VERSION=humble && \
-#     rosdep init && \
-#     rosdep update && \
-#     rosdep install -r --from-paths src -i -y --rosdistro humble
 
 RUN cd /home/ws_ros2/src/drone_misc && \
     . /opt/ros/humble/setup.sh && \
