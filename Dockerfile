@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ros:humble-perception
+ARG BASE_IMAGE=ros:humble-perception-jammy
 
 # The following steps are based on the offical multi-stage build: https://github.com/IntelRealSense/librealsense/blob/master/scripts/Docker/Dockerfile
 #################################
@@ -52,6 +52,7 @@ RUN cd /usr/src/librealsense \
     -DBUILD_GRAPHICAL_EXAMPLES=OFF \
     -DBUILD_PYTHON_BINDINGS:bool=true \
     -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+    -DFORCE_RSUSB_BACKEND=TRUE \
     -DCMAKE_BUILD_TYPE=Release ../ \
  && make -j$(($(nproc)-1)) all \
  && make install
