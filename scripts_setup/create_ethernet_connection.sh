@@ -7,7 +7,7 @@ if [ -z "$IP_ADDR_ETH" ]; then
 fi
 
 # Path to the directory where the file will be saved
-CONFIG_DIR='./test' #"/mnt/boot/system-connections"
+CONFIG_DIR="/mnt/boot/system-connections"
 
 # Check if the directory exists, create it if it doesn't
 if [ ! -d "$CONFIG_DIR" ]; then
