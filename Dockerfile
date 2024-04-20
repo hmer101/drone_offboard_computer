@@ -209,7 +209,8 @@ RUN cd /home/ws_ros2 && \
 # Source the ROS2 overlay workspace
 RUN echo "source /home/ws_ros2/install/setup.bash" >> ~/.bashrc
 
-# Copy the startup script
+# Copy the startup scripts
+COPY scripts_setup /home/ws_ros2/scripts_setup
 COPY start.sh /home/ws_ros2/start.sh
 
 # Use the script as the entry point
