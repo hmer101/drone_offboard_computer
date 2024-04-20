@@ -4,6 +4,10 @@
 source /opt/ros/humble/setup.bash
 source /home/ws_ros2/install/setup.bash
 
+# Create the ethernet connection file and whitelist it for ROS2 communication
+bash ./scripts_setup/create_ethernet_connection.sh # Create the ethernet connection
+bash ./scripts_setup/generate_ethernet_whitelist.sh # Create the fast_dds_config.xml file for whitelisting
+
 # Conditional startup logic based on DEVICE_ROLE
 if [ "$DEVICE_ROLE" = "load" ]; then
   # Command for the load device
