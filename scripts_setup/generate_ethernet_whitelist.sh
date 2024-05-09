@@ -8,7 +8,7 @@ fi
 
 
 # Create the XML configuration file
-cat <<EOF > fast_dds_config.xml
+cat <<EOF > /home/ws_ros2/fast_dds_config.xml
 <?xml version="1.0" encoding="UTF-8" ?>
 <dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
     <profiles>
