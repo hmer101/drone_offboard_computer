@@ -209,6 +209,15 @@ RUN cd /home/ws_ros2 && \
 # Source the ROS2 overlay workspace
 RUN echo "source /home/ws_ros2/install/setup.bash" >> ~/.bashrc
 
+# Setup chrony
+RUN apt-get update -y && \ 
+    apt-get upgrade -y &&\ 
+    apt-get install chrony 
+    #&& \rm -rf /tmp/* /var/cache/apk/*
+
+COPY chrony.conf.template /etc/chrony/chrony.conf
+#EXPOSE 123/udp
+
 # Copy the startup scripts
 COPY scripts_setup /home/ws_ros2/scripts_setup
 COPY start.sh /home/ws_ros2/start.sh

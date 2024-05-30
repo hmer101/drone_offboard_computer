@@ -8,6 +8,9 @@ source /home/ws_ros2/install/setup.bash
 bash /home/ws_ros2/scripts_setup/create_ethernet_connection.sh # Create the ethernet connection
 bash /home/ws_ros2/scripts_setup/generate_ethernet_whitelist.sh # Create the fast_dds_config.xml file for whitelisting
 
+# Set up chrony for time synchronization
+bash /home/ws_ros2/scripts_setup/setup_chrony.sh
+
 # Conditional startup logic based on DEVICE_ROLE
 if [ "$DEVICE_ROLE" = "load" ]; then
   # Command for the load device
