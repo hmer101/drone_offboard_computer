@@ -160,7 +160,7 @@ RUN cd /home/ws_ros2/src/ \
 
 RUN cd /home/ws_ros2/src/drone_misc && \
     . /opt/ros/humble/setup.sh && \
-    pip install -r requirements_drones.txt
+    pip install -r requirements.txt
 
 
 # Build first part of workspace
