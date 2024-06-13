@@ -175,15 +175,15 @@ RUN cd /home/ws_ros2 && \
 # WiFi extender driver
 # Note: driver must be installed directly on host machine instead using:  sh -c 'wget linux.brostrend.com/install -O /tmp/install && sh /tmp/install'
 # instructions here: https://linux.brostrend.com/
-RUN apt-get update && apt-get install -y wget expect \
-    && wget -qO /tmp/install http://linux.brostrend.com/install \
-    && chmod +x /tmp/install \
-    && expect -c ' \
-        spawn sh /tmp/install; \
-        expect "Please type your choice, or \\\[Enter\\\] to autodetect:" {send "c\\r"}; \
-        expect eof' \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/install
+# RUN apt-get update && apt-get install -y wget expect \
+#     && wget -qO /tmp/install http://linux.brostrend.com/install \
+#     && chmod +x /tmp/install \
+#     && expect -c ' \
+#         spawn sh /tmp/install; \
+#         expect "Please type your choice, or \\\[Enter\\\] to autodetect:" {send "c\\r"}; \
+#         expect eof' \
+#     && apt-get clean \
+#     && rm -rf /var/lib/apt/lists/* /tmp/install
 
 # Copy in frequently changed repos
 COPY ws_ros2/src/swarm_load_carry /home/ws_ros2/src/swarm_load_carry/
