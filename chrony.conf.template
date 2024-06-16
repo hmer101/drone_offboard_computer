@@ -1,4 +1,0 @@
-pool pool.ntp.org iburst
-initstepslew 10 pool.ntp.org
-driftfile /var/lib/chrony/chrony.drift
-local stratum 10

@@ -1,0 +1,6 @@
+pool pool.ntp.org iburst
+# initstepslew 10 pool.ntp.org
+driftfile /var/lib/chrony/chrony.drift
+makestep 1 10 #3
+rtcsync
+# local stratum 10

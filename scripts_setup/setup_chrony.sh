@@ -28,13 +28,16 @@ fi
 
 ## SETUP CHRONY
 # Start the chrony server on the first drone and client on all other devices
-#cp /etc/chrony/chrony.conf.template /etc/chrony/chrony.conf
-echo "" >> /etc/chrony/chrony.conf
 
 if [ "$DEVICE_ROLE" = "drone" ] && [ "$DRONE_ID" = "$FIRST_DRONE_ID" ]; then
+    cp -f /etc/chrony/chrony_server.conf /etc/chrony/chrony.conf
+    echo "" >> /etc/chrony/chrony.conf
     echo "allow $IP_ADDR_CHRN/24" >> /etc/chrony/chrony.conf
+
 else
-    echo "server $IP_ADDR_CHRN iburst" >> /etc/chrony/chrony.conf
+    cp -f /etc/chrony/chrony_client.conf /etc/chrony/chrony.conf
+    echo "" >> /etc/chrony/chrony.conf
+    echo "server $IP_ADDR_CHRN iburst minpoll 1 maxpoll 2" >> /etc/chrony/chrony.conf
 fi
 
 # Start chronyd 

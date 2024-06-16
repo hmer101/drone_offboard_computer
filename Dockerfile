@@ -215,7 +215,8 @@ RUN apt-get update -y && \
     apt-get install chrony 
     #&& \rm -rf /tmp/* /var/cache/apk/*
 
-COPY chrony.conf.template /etc/chrony/chrony.conf
+COPY chrony_client.conf.template /etc/chrony/chrony_client.conf
+COPY chrony_server.conf.template /etc/chrony/chrony_server.conf
 #EXPOSE 123/udp
 
 # Copy the startup scripts
