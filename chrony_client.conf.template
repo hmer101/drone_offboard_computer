@@ -1,0 +1,3 @@
+makestep 1 -1
+driftfile /var/lib/chrony/drift
+rtcsync
