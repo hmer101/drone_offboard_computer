@@ -134,8 +134,9 @@ RUN mkdir -p /home/ws_ros2/src/
 
 ####### Clone repos 
 #-b release/drones
+# release/drones_v1.15-rc2
 RUN cd /home/ws_ros2/src/ && \
-    git clone -b release/drones_v1.15-rc2 git@github.com:hmer101/px4_msgs.git --recursive && \ 
+    git clone -b release/drones_v1.15-beta2 git@github.com:hmer101/px4_msgs.git --recursive && \ 
     git clone -b release/drones git@github.com:hmer101/drone_misc.git --recursive && \
     git clone -b release/drones git@github.com:hmer101/manif.git --recursive && \
     git clone -b release/drones git@github.com:hmer101/kalmanif.git --recursive && \
