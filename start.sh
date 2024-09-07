@@ -14,8 +14,8 @@ bash /home/ws_ros2/scripts_setup/setup_chrony.sh
 # Conditional startup logic based on DEVICE_ROLE
 if [ "$DEVICE_ROLE" = "load" ]; then
   # Command for the load device
-  ros2 launch swarm_load_carry phys_load.launch.py
+  ros2 launch multi_drone_slung_load phys_load.launch.py
 else
   # Default command for drones
-  ros2 launch swarm_load_carry phys_drone.launch.py
+  ros2 launch multi_drone_slung_load phys_drone.launch.py
 fi

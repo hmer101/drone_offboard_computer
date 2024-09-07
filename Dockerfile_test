@@ -124,22 +124,22 @@ RUN mkdir -p /root/.ssh && \
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 
 ## Setup Micro-DDS
-RUN cd /home/repos && git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
-RUN cd /home/repos/Micro-XRCE-DDS-Agent && mkdir build 
-RUN cd /home/repos/Micro-XRCE-DDS-Agent/build && cmake .. && make && make install && ldconfig /usr/local/lib/ 
+# RUN cd /home/repos && git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
+# RUN cd /home/repos/Micro-XRCE-DDS-Agent && mkdir build 
+# RUN cd /home/repos/Micro-XRCE-DDS-Agent/build && cmake .. && make && make install && ldconfig /usr/local/lib/ 
 
 
 ## Build ROS2 workspace
 RUN mkdir -p /home/ws_ros2/src/  
 
-####### Clone repos 
-#-b release/drones
+####### Clone repos
 RUN cd /home/ws_ros2/src/ && \
-    git clone -b release/drones_v1.15-rc2 git@github.com:hmer101/px4_msgs.git --recursive && \ 
+    git clone -b release/drones git@github.com:hmer101/px4_msgs.git --recursive && \
     git clone -b release/drones git@github.com:hmer101/drone_misc.git --recursive && \
     git clone -b release/drones git@github.com:hmer101/manif.git --recursive && \
-    git clone -b release/drones git@github.com:hmer101/kalmanif.git --recursive && \
-    git clone -b ros2-development https://github.com/IntelRealSense/realsense-ros.git 
+    git clone -b release/drones git@github.com:hmer101/kalmanif.git --recursive 
+    #&& \
+    # git clone -b ros2-development https://github.com/IntelRealSense/realsense-ros.git 
 
 # Cloning finished. Remove the private GitHub key
 # RUN rm -rf /root/.ssh
@@ -172,18 +172,6 @@ RUN cd /home/ws_ros2 && \
     colcon build
 
 
-# WiFi extender driver
-# Note: driver must be installed directly on host machine instead using:  sh -c 'wget linux.brostrend.com/install -O /tmp/install && sh /tmp/install'
-# instructions here: https://linux.brostrend.com/
-# RUN apt-get update && apt-get install -y wget expect \
-#     && wget -qO /tmp/install http://linux.brostrend.com/install \
-#     && chmod +x /tmp/install \
-#     && expect -c ' \
-#         spawn sh /tmp/install; \
-#         expect "Please type your choice, or \\\[Enter\\\] to autodetect:" {send "c\\r"}; \
-#         expect eof' \
-#     && apt-get clean \
-#     && rm -rf /var/lib/apt/lists/* /tmp/install
 
 # Copy in frequently changed repos
 COPY ws_ros2/src/multi_drone_slung_load /home/ws_ros2/src/multi_drone_slung_load/
@@ -210,13 +198,13 @@ RUN cd /home/ws_ros2 && \
 RUN echo "source /home/ws_ros2/install/setup.bash" >> ~/.bashrc
 
 # Setup chrony
-RUN apt-get update -y && \ 
-    apt-get upgrade -y &&\ 
-    apt-get install chrony 
-    #&& \rm -rf /tmp/* /var/cache/apk/*
+# RUN apt-get update -y && \ 
+#     apt-get upgrade -y &&\ 
+#     apt-get install chrony 
+#     #&& \rm -rf /tmp/* /var/cache/apk/*
 
-COPY chrony_client.conf.template /etc/chrony/chrony_client.conf
-COPY chrony_server.conf.template /etc/chrony/chrony_server.conf
+# COPY chrony_client.conf.template /etc/chrony/chrony_client.conf
+# COPY chrony_server.conf.template /etc/chrony/chrony_server.conf
 #EXPOSE 123/udp
 
 # Copy the startup scripts
