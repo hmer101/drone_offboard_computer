@@ -31,7 +31,7 @@ secondaries=
 mac-address-blacklist=
 
 [ipv4]
-address1=${IP_ADDR_ETH}/24,192.168.0.1
+address1=${IP_ADDR_ETH}/24,192.168.4.1
 dns=8.8.8.8;8.8.4.4;
 dns-search=
 method=manual

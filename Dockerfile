@@ -190,7 +190,9 @@ RUN cd /home/ws_ros2 && \
 # Copy in frequently changed repos
 COPY ws_ros2/src/multi_drone_slung_load /home/ws_ros2/src/multi_drone_slung_load/
 COPY ws_ros2/src/multi_drone_slung_load_interfaces /home/ws_ros2/src/multi_drone_slung_load_interfaces/
+COPY ws_ros2/src/slung_pose_measurement /home/ws_ros2/src/slung_pose_measurement/
 COPY ws_ros2/src/slung_pose_estimation /home/ws_ros2/src/slung_pose_estimation/
+COPY ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
 
 
 # Build remaining parts of colcon workspace
@@ -205,7 +207,7 @@ RUN cd /home/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_tra
 
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select multi_drone_slung_load_interfaces multi_drone_slung_load manif kalmanif slung_pose_estimation
+    colcon build --packages-select multi_drone_slung_load_interfaces multi_drone_slung_load manif kalmanif slung_pose_measurement slung_pose_estimation highbay_vicon_px4
 
 
 # Source the ROS2 overlay workspace
