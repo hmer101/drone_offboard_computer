@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Check if the MY_RPI_IP environment variable is set
+# Check if the IP_ADDR_ETH environment variable is set
 if [ -z "$IP_ADDR_ETH" ]; then
   echo "The IP_ADDR_ETH environment variable is not set."
   exit 1
