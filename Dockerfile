@@ -137,11 +137,12 @@ RUN mkdir -p /home/ws_ros2/src/
 # release/drones_v1.15-rc2
 # release/drones_v1.15-beta2
 RUN cd /home/ws_ros2/src/ && \
-    git clone -b release/drones git@github.com:hmer101/px4_msgs.git --recursive && \ 
     git clone -b release/drones git@github.com:hmer101/drone_misc.git --recursive && \
     git clone -b release/drones git@github.com:hmer101/manif.git --recursive && \
     git clone -b release/drones git@github.com:hmer101/kalmanif.git --recursive && \
     git clone -b ros2-development https://github.com/IntelRealSense/realsense-ros.git 
+
+#    git clone -b release/drones git@github.com:hmer101/px4_msgs.git --recursive && \ 
 
 # Cloning finished. Remove the private GitHub key
 # RUN rm -rf /root/.ssh
@@ -188,12 +189,12 @@ RUN cd /home/ws_ros2 && \
 #     && rm -rf /var/lib/apt/lists/* /tmp/install
 
 # Copy in frequently changed repos
+COPY ws_ros2/src/px4_msgs /home/ws_ros2/src/px4_msgs
 COPY ws_ros2/src/multi_drone_slung_load /home/ws_ros2/src/multi_drone_slung_load/
 COPY ws_ros2/src/multi_drone_slung_load_interfaces /home/ws_ros2/src/multi_drone_slung_load_interfaces/
 COPY ws_ros2/src/slung_pose_measurement /home/ws_ros2/src/slung_pose_measurement/
 COPY ws_ros2/src/slung_pose_estimation /home/ws_ros2/src/slung_pose_estimation/
 COPY ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
-
 
 # Build remaining parts of colcon workspace
 # Make frame transforms .so
@@ -210,7 +211,7 @@ RUN cd /home/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_tra
 
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select multi_drone_slung_load_interfaces multi_drone_slung_load manif kalmanif slung_pose_measurement slung_pose_estimation highbay_vicon_px4
+    colcon build --packages-select px4_msgs multi_drone_slung_load_interfaces multi_drone_slung_load manif kalmanif slung_pose_measurement slung_pose_estimation highbay_vicon_px4
 
 
 # Source the ROS2 overlay workspace
