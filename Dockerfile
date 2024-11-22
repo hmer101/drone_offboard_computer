@@ -102,6 +102,16 @@ RUN apt-get update \
 # Install python packages
 RUN pip install --upgrade pip
 
+# Setup chrony
+RUN apt-get update -y && \ 
+    apt-get upgrade -y &&\ 
+    apt-get install chrony 
+    #&& \rm -rf /tmp/* /var/cache/apk/*
+
+COPY chrony_client.conf.template /etc/chrony/chrony_client.conf
+COPY chrony_server.conf.template /etc/chrony/chrony_server.conf
+#EXPOSE 123/udp
+
 # Setup for cloning repositories from GitHub
 # Create a directory to hold the repositories
 WORKDIR /home
@@ -142,8 +152,6 @@ RUN cd /home/ws_ros2/src/ && \
     git clone -b release/drones git@github.com:hmer101/kalmanif.git --recursive && \
     git clone -b ros2-development https://github.com/IntelRealSense/realsense-ros.git 
 
-#    git clone -b release/drones git@github.com:hmer101/px4_msgs.git --recursive && \ 
-
 # Cloning finished. Remove the private GitHub key
 # RUN rm -rf /root/.ssh
 
@@ -165,16 +173,6 @@ RUN cd /home/ws_ros2/src/drone_misc && \
     . /opt/ros/humble/setup.sh && \
     pip install -r requirements.txt
 
-
-# Build first part of workspace
-RUN cd /home/ws_ros2 && \ 
-    . /opt/ros/humble/setup.sh && \
-    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/kalmanif:$CMAKE_PREFIX_PATH && \
-    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/manif:$CMAKE_PREFIX_PATH && \
-    #. /home/ws_ros2/install/setup.sh && \
-    colcon build
-
-
 # WiFi extender driver
 # Note: driver must be installed directly on host machine instead using:  sh -c 'wget linux.brostrend.com/install -O /tmp/install && sh /tmp/install'
 # instructions here: https://linux.brostrend.com/
@@ -188,13 +186,30 @@ RUN cd /home/ws_ros2 && \
 #     && apt-get clean \
 #     && rm -rf /var/lib/apt/lists/* /tmp/install
 
-# Copy in frequently changed repos
+# Build first part of workspace
+RUN cd /home/ws_ros2 && \ 
+    . /opt/ros/humble/setup.sh && \
+    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/kalmanif:$CMAKE_PREFIX_PATH && \
+    # export CMAKE_PREFIX_PATH=/home/ws_ros2/install/manif:$CMAKE_PREFIX_PATH && \
+    #. /home/ws_ros2/install/setup.sh && \
+    colcon build
+
+
+# Copy in sometimes changed repos
 COPY ws_ros2/src/px4_msgs /home/ws_ros2/src/px4_msgs
+COPY ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
+
+# Build second part of workspace
+RUN cd /home/ws_ros2 && \ 
+    . /opt/ros/humble/setup.sh && \
+    colcon build --packages-select px4_msgs highbay_vicon_px4
+
+
+# Copy in frequently changed repos
 COPY ws_ros2/src/multi_drone_slung_load /home/ws_ros2/src/multi_drone_slung_load/
 COPY ws_ros2/src/multi_drone_slung_load_interfaces /home/ws_ros2/src/multi_drone_slung_load_interfaces/
-COPY ws_ros2/src/slung_pose_measurement /home/ws_ros2/src/slung_pose_measurement/
-COPY ws_ros2/src/slung_pose_estimation /home/ws_ros2/src/slung_pose_estimation/
-COPY ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
+#COPY ws_ros2/src/slung_pose_measurement /home/ws_ros2/src/slung_pose_measurement/
+#COPY ws_ros2/src/slung_pose_estimation /home/ws_ros2/src/slung_pose_estimation/
 
 # Build remaining parts of colcon workspace
 # Make frame transforms .so
@@ -211,21 +226,13 @@ RUN cd /home/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_tra
 
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select px4_msgs multi_drone_slung_load_interfaces multi_drone_slung_load manif kalmanif slung_pose_measurement slung_pose_estimation highbay_vicon_px4
+    colcon build --packages-select  multi_drone_slung_load_interfaces multi_drone_slung_load  
+
+# manif kalmanif slung_pose_measurement slung_pose_estimation 
 
 
 # Source the ROS2 overlay workspace
 RUN echo "source /home/ws_ros2/install/setup.bash" >> ~/.bashrc
-
-# Setup chrony
-RUN apt-get update -y && \ 
-    apt-get upgrade -y &&\ 
-    apt-get install chrony 
-    #&& \rm -rf /tmp/* /var/cache/apk/*
-
-COPY chrony_client.conf.template /etc/chrony/chrony_client.conf
-COPY chrony_server.conf.template /etc/chrony/chrony_server.conf
-#EXPOSE 123/udp
 
 # Copy the startup scripts
 COPY scripts_setup /home/ws_ros2/scripts_setup
