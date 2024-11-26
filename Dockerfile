@@ -232,6 +232,13 @@ RUN cd /home/ws_ros2 && \
 # manif kalmanif slung_pose_measurement slung_pose_estimation 
 
 
+# TODO: MOVE UP DOCKERFILE
+RUN apt-get update -y && \ 
+    apt-get upgrade -y &&\ 
+    apt-get install -y ros-humble-rmw-cyclonedds-cpp
+
+COPY ./cyclone_dds_config.xml /home/ws_ros2/cyclone_dds_config.xml
+
 # Source the ROS2 overlay workspace
 RUN echo "source /home/ws_ros2/install/setup.bash" >> ~/.bashrc
 
