@@ -1,0 +1,39 @@
+<CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+    <Domain Id="0"> <!--"any"-->
+        <General>
+            <!-- <DontRoute>true</DontRoute> -->  <!-- Prevents sending messages from one network interface to another -->
+            <Interfaces>
+                <NetworkInterface autodetermine="true" priority="default" multicast="default" />
+            </Interfaces>
+            <!-- <Interfaces>
+              <NetworkInterface name="usb0" />
+              <NetworkInterface name="wlan0" />
+            </Interfaces> -->
+            <AllowMulticast>true</AllowMulticast> <!-- default -->
+            <EnableMulticastLoopback>true</EnableMulticastLoopback>
+            <MaxMessageSize>65500B</MaxMessageSize>
+        </General>
+        <Discovery>
+            <EnableTopicDiscoveryEndpoints>true</EnableTopicDiscoveryEndpoints>
+            <!-- <ParticipantIndex>0</ParticipantIndex> -->
+            <!-- Note: Don't need to subscribe to self but doesn't seem to cause issues-->
+            <!-- Note: topics not from these peers will still appear when using `ros2 topic list', but you will not be able to echo it-->
+            <!-- <Peers> 
+                <Peer Address='${IP_ADDR_DRONE1}'/>
+                <Peer Address='${IP_ADDR_DRONE2}'/>
+                <Peer Address='${IP_ADDR_DRONE3}'/>
+                <Peer Address='${IP_ADDR_LOAD1}'/>
+                <Peer Address='${IP_ADDR_MOCAP}'/>
+            </Peers> -->
+        </Discovery>
+        <!-- <Internal>
+            <Watermarks>
+                <WhcHigh>500kB</WhcHigh>
+            </Watermarks>
+        </Internal>
+        <Tracing>
+            <Verbosity>config</Verbosity>
+            <OutputFile>cdds.log.${CYCLONEDDS_PID}</OutputFile>
+        </Tracing> -->
+    </Domain>
+</CycloneDDS>
