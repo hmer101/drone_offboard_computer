@@ -12,10 +12,14 @@ source /home/ws_ros2/install/setup.bash
 #bash /home/ws_ros2/scripts_setup/setup_chrony.sh
 
 # Conditional startup logic based on DEVICE_ROLE
+chmod +x ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/tools/*.sh
+
 if [ "$DEVICE_ROLE" = "load" ]; then
   # Command for the load device
-  ros2 launch multi_drone_slung_load phys_load.launch.py
+  #ros2 launch multi_drone_slung_load phys_load.launch.py
+  exec ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/tools/phys_start_load.sh
 else
   # Default command for drones
-  ros2 launch multi_drone_slung_load phys_drone.launch.py
+  #ros2 launch multi_drone_slung_load phys_drone.launch.py
+  exec ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/tools/phys_start_drone.sh
 fi
