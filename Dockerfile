@@ -71,6 +71,9 @@ ENV PYTHONPATH=${PYTHONPATH}:/usr/local/lib
 #   EVERYTHING ELSE    #
 ######################################
 
+##############
+### SYSTEM ###
+##############
 
 # Set a non-interactive shell to avoid prompts during build
 ENV DEBIAN_FRONTEND=noninteractive
@@ -108,13 +111,38 @@ RUN apt-get update -y && \
     apt-get install chrony 
     #&& \rm -rf /tmp/* /var/cache/apk/*
 
-COPY chrony_client.conf.template /etc/chrony/chrony_client.conf
-COPY chrony_server.conf.template /etc/chrony/chrony_server.conf
+
+
+# Setup dockerfile for installation
+WORKDIR /home
+ENV BUILD_CONTEXT_ROOT=. 
+#multi_drone_slung_load_master
+ENV BUILD_CONTEXT_OFFBOARD=${BUILD_CONTEXT_ROOT}/repos/drone_offboard_computer
+
+COPY ${BUILD_CONTEXT_OFFBOARD}/chrony_client.conf.template /etc/chrony/chrony_client.conf
+COPY ${BUILD_CONTEXT_OFFBOARD}/chrony_server.conf.template /etc/chrony/chrony_server.conf
 #EXPOSE 123/udp
+
+# WiFi extender driver
+# Note: driver must be installed directly on host machine instead using:  sh -c 'wget linux.brostrend.com/install -O /tmp/install && sh /tmp/install'
+# instructions here: https://linux.brostrend.com/
+# RUN apt-get update && apt-get install -y wget expect \
+#     && wget -qO /tmp/install http://linux.brostrend.com/install \
+#     && chmod +x /tmp/install \
+#     && expect -c ' \
+#         spawn sh /tmp/install; \
+#         expect "Please type your choice, or \\\[Enter\\\] to autodetect:" {send "c\\r"}; \
+#         expect eof' \
+#     && apt-get clean \
+#     && rm -rf /var/lib/apt/lists/* /tmp/install
+
+
+##############
+### GITHUB ###
+##############
 
 # Setup for cloning repositories from GitHub
 # Create a directory to hold the repositories
-WORKDIR /home
 RUN mkdir -p /home/repos
 
 # Argument to pass the SSH private key
@@ -129,28 +157,42 @@ RUN mkdir -p /root/.ssh && \
     ssh-add /root/.ssh/id_ed25519
 
 
-### ROS2
+
+##############
+### ROS2 - setup ###
+##############
+
+# CycloneDDS install
+RUN apt-get update -y && \ 
+    apt-get upgrade -y &&\ 
+    apt-get install -y ros-humble-rmw-cyclonedds-cpp
+
+
 # Source the ROS2 setup script
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 
 ## Setup Micro-DDS
-RUN cd /home/repos && git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
-RUN cd /home/repos/Micro-XRCE-DDS-Agent && mkdir build 
-RUN cd /home/repos/Micro-XRCE-DDS-Agent/build && cmake .. && make && make install && ldconfig /usr/local/lib/ 
+#RUN cd /home/repos && git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
+COPY ${BUILD_CONTEXT_ROOT}/repos/Micro-XRCE-DDS-Agent /home/repos/Micro-XRCE-DDS-Agent/
+# RUN cd /home/repos/Micro-XRCE-DDS-Agent && mkdir build 
+# RUN cd /home/repos/Micro-XRCE-DDS-Agent/build && cmake .. && make && make install && ldconfig /usr/local/lib/ 
 
+RUN rm -rf /home/repos/Micro-XRCE-DDS-Agent/build && \
+    mkdir -p /home/repos/Micro-XRCE-DDS-Agent/build && \
+    cd /home/repos/Micro-XRCE-DDS-Agent/build && \
+    cmake .. && make && make install && ldconfig /usr/local/lib/
 
-## Build ROS2 workspace
+## Make ROS2 workspace
 RUN mkdir -p /home/ws_ros2/src/  
 
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/px4_msgs /home/ws_ros2/src/px4_msgs/
+
 ####### Clone repos 
-#-b release/drones
-# release/drones_v1.15-rc2
-# release/drones_v1.15-beta2
-RUN cd /home/ws_ros2/src/ && \
-    git clone -b release/drones git@github.com:hmer101/drone_misc.git --recursive && \
-    git clone -b release/drones git@github.com:hmer101/manif.git --recursive && \
-    git clone -b release/drones git@github.com:hmer101/kalmanif.git --recursive && \
-    git clone -b ros2-development https://github.com/IntelRealSense/realsense-ros.git 
+# RUN cd /home/ws_ros2/src/ && \
+#     git clone -b release/drones git@github.com:hmer101/drone_misc.git --recursive && \
+#     git clone -b release/drones git@github.com:hmer101/manif.git --recursive && \
+#     git clone -b release/drones git@github.com:hmer101/kalmanif.git --recursive && \
+#     git clone -b ros2-development https://github.com/IntelRealSense/realsense-ros.git 
 
 # Cloning finished. Remove the private GitHub key
 # RUN rm -rf /root/.ssh
@@ -169,22 +211,23 @@ RUN cd /home/ws_ros2/src/ \
  && rosdep install -i --from-path src --rosdistro humble --skip-keys=librealsense2 -y
 
 
-RUN cd /home/ws_ros2/src/drone_misc && \
-    . /opt/ros/humble/setup.sh && \
+##############
+### PYTHON ###
+##############
+COPY ${BUILD_CONTEXT_ROOT}/requirements.txt /home/requirements.txt
+
+RUN . /opt/ros/humble/setup.sh && \
     pip install -r requirements.txt
 
-# WiFi extender driver
-# Note: driver must be installed directly on host machine instead using:  sh -c 'wget linux.brostrend.com/install -O /tmp/install && sh /tmp/install'
-# instructions here: https://linux.brostrend.com/
-# RUN apt-get update && apt-get install -y wget expect \
-#     && wget -qO /tmp/install http://linux.brostrend.com/install \
-#     && chmod +x /tmp/install \
-#     && expect -c ' \
-#         spawn sh /tmp/install; \
-#         expect "Please type your choice, or \\\[Enter\\\] to autodetect:" {send "c\\r"}; \
-#         expect eof' \
-#     && apt-get clean \
-#     && rm -rf /var/lib/apt/lists/* /tmp/install
+# Python
+# RUN cd /home/ws_ros2/src/drone_misc && \
+#     . /opt/ros/humble/setup.sh && \
+#     pip install -r requirements.txt
+
+
+##############
+### ROS2 - build ###
+##############
 
 # Build first part of workspace
 RUN cd /home/ws_ros2 && \ 
@@ -196,25 +239,29 @@ RUN cd /home/ws_ros2 && \
 
 
 # Copy in sometimes changed repos
-COPY ws_ros2/src/px4_msgs /home/ws_ros2/src/px4_msgs
-COPY ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
+# COPY ws_ros2/src/px4_msgs /home/ws_ros2/src/px4_msgs
+# COPY ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
 
 # Build second part of workspace
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select px4_msgs highbay_vicon_px4
+    colcon build --packages-select highbay_vicon_px4
+#px4_msgs
 
 
 # Copy in frequently changed repos
-COPY ws_ros2/src/multi_drone_slung_load_interfaces /home/ws_ros2/src/multi_drone_slung_load_interfaces/
-COPY ws_ros2/src/multi_drone_slung_load /home/ws_ros2/src/multi_drone_slung_load/
-COPY ws_ros2/src/multi_drone_slung_load_cpp /home/ws_ros2/src/multi_drone_slung_load_cpp/
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load_interfaces /home/ws_ros2/src/multi_drone_slung_load_interfaces/
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load /home/ws_ros2/src/multi_drone_slung_load/
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load_cpp /home/ws_ros2/src/multi_drone_slung_load_cpp/
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/zenoh_vendor /home/ws_ros2/src/zenoh_vendor/
 #COPY ws_ros2/src/slung_pose_measurement /home/ws_ros2/src/slung_pose_measurement/
 #COPY ws_ros2/src/slung_pose_estimation /home/ws_ros2/src/slung_pose_estimation/
 
 # Build remaining parts of colcon workspace
 # Make frame transforms .so
-RUN cd /home/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_transforms && \
+RUN cd ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_transforms && \
+    rm -rf build && \
     . /opt/ros/humble/setup.sh && \
     mkdir -p build && \
     cd build && \
@@ -225,26 +272,64 @@ RUN cd /home/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_tra
 # NUC: cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../frame_transforms.so
 # RPI: cp frame_transforms.cpython-310-aarch64-linux-gnu.so ../../frame_transforms.so
 
+# ******* MOVE EARLIER *******
+RUN apt-get update && apt install -y unzip
+
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select  multi_drone_slung_load_interfaces multi_drone_slung_load multi_drone_slung_load_cpp
+    colcon build --packages-select  multi_drone_slung_load_interfaces multi_drone_slung_load multi_drone_slung_load_cpp zenoh_vendor
 
 # manif kalmanif slung_pose_measurement slung_pose_estimation 
 
+# ******* MOVE EARLIER *******
+RUN apt-get update && apt install -y tmux
 
-# TODO: MOVE UP DOCKERFILE
-RUN apt-get update -y && \ 
-    apt-get upgrade -y &&\ 
-    apt-get install -y ros-humble-rmw-cyclonedds-cpp
+##############
+### SETUP ##
+##############
 
-COPY ./cyclone_dds_config.xml /home/ws_ros2/cyclone_dds_config.xml
+###### Copy in other config files
+# CycloneDDS config
+COPY ${BUILD_CONTEXT_OFFBOARD}/cyclone_dds_config.xml /home/ws_ros2/cyclone_dds_config.xml
 
 # Source the ROS2 overlay workspace
 RUN echo "source /home/ws_ros2/install/setup.bash" >> ~/.bashrc
 
 # Copy the startup scripts
-COPY scripts_setup /home/ws_ros2/scripts_setup
-COPY start.sh /home/ws_ros2/start.sh
+COPY ${BUILD_CONTEXT_OFFBOARD}/scripts_setup /home/ws_ros2/scripts_setup
+COPY ${BUILD_CONTEXT_OFFBOARD}/start.sh /home/ws_ros2/start.sh
+
+
+##############
+### VARIABLES ##
+##############
+RUN echo '# ROS2 RTPS network' >> ~/.bashrc && \
+    echo 'export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST' >> ~/.bashrc && \
+    echo 'export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' >> ~/.bashrc && \
+    echo 'export ROS_DOMAIN_ID=10' >> ~/.bashrc
+
+
+##############
+### ALIASES ##
+##############
+# Add aliases to .bashrc
+
+RUN echo 'alias ws_build="colcon build --base-paths /home/ws_ros2 --build-base /home/ws_ros2/build --install-base /home/ws_ros2/install"' >> ~/.bashrc
+RUN echo 'alias zenoh_drone="bash /home/ws_ros2/src/zenoh_vendor/tools/zenoh_drone.sh"' >> ~/.bashrc
+
+# RUN echo 'alias slung_nodes="bash /home/ws_ros2/src/multi_drone_slung_load/tools/sim_nodes.sh"' >> ~/.bashrc
+# RUN echo 'alias slung_end="bash /home/ws_ros2/ws_ros2/src/multi_drone_slung_load/tools/sim_end.sh"' >> ~/.bashrc
+
+# RUN echo 'alias phys_gcs="bash /home/ws_ros2/src/multi_drone_slung_load/tools/phys_start_gcs.sh"' >> ~/.bashrc
+# RUN echo 'alias phys_load="bash /home/ws_ros2/src/multi_drone_slung_load/tools/phys_start_load.sh"' >> ~/.bashrc
+# RUN echo 'alias phys_drone="bash /home/ws_ros2/src/multi_drone_slung_load/tools/phys_start_drone.sh"' >> ~/.bashrc
+
+RUN echo 'alias edit_bashrc="nano /home/.bashrc"' >> ~/.bashrc
+
+
+##############
+### START ##
+##############
 
 # Use the script as the entry point
 CMD ["/home/ws_ros2/start.sh"]
@@ -254,8 +339,21 @@ CMD ["/home/ws_ros2/start.sh"]
 # docker build --build-arg SSH_PRIVATE_KEY="$(cat /home/harvey/.ssh/id_ed25519)" -f dockerfile_drone -t drone:first . #--no-cache
 # When deploying in Balena, use in ENV variable for SSH_PRIVATE_KEY_ENV_VAR_GH instead
 
+
+# In dev container
+# Building: 
+#   cd /multi_drone_slung_load_master
+#   docker build -f ./repos/drone_offboard_computer/Dockerfile -t drone:latest .
+
+# Running: 
+# - Normal start: docker run --rm -it drone:latest
+# - Interactive start: docker run --rm -it drone:latest bash
+
+
+
 # Running dockerfile interactively (useful if using CMD ["bash"])
 # docker run --tty -it drone:first
+
 
 # GUI Forwarding: docker run --tty -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro -it drone:first
 # Need to run "xhost +" on host machine first
