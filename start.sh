@@ -11,6 +11,9 @@ source /home/ws_ros2/install/setup.bash
 # Set up chrony for time synchronization
 #bash /home/ws_ros2/scripts_setup/setup_chrony.sh
 
+# Enable loopback multicast
+ip l set lo multicast on
+
 # Conditional startup logic based on DEVICE_ROLE
 chmod +x ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/tools/*.sh
 
