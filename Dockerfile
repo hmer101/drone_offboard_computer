@@ -115,8 +115,8 @@ RUN apt-get update -y && \
 
 # Setup dockerfile for installation
 WORKDIR /home
+#ENV BUILD_CONTEXT_ROOT=../.. 
 ENV BUILD_CONTEXT_ROOT=. 
-#multi_drone_slung_load_master
 ENV BUILD_CONTEXT_OFFBOARD=${BUILD_CONTEXT_ROOT}/repos/drone_offboard_computer
 
 COPY ${BUILD_CONTEXT_OFFBOARD}/chrony_client.conf.template /etc/chrony/chrony_client.conf
@@ -282,7 +282,8 @@ RUN cd /home/ws_ros2 && \
 # manif kalmanif slung_pose_measurement slung_pose_estimation 
 
 # ******* MOVE EARLIER *******
-RUN apt-get update && apt install -y tmux
+RUN apt-get update && apt install -y tmux && \
+    apt-get install -y iputils-ping
 
 ##############
 ### SETUP ##
@@ -303,12 +304,36 @@ COPY ${BUILD_CONTEXT_OFFBOARD}/start.sh /home/ws_ros2/start.sh
 ##############
 ### VARIABLES ##
 ##############
-RUN echo '# ROS2 RTPS network' >> ~/.bashrc && \
-    echo 'export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST' >> ~/.bashrc && \
-    echo 'export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' >> ~/.bashrc && \
-    echo 'export ROS_DOMAIN_ID=10' >> ~/.bashrc && \
-    #echo 'export CYCLONEDDS_URI=file:///home/ws_ros2/cyclone_dds_config.xml' >> ~/.bashrc && \
-    echo "export ROS_LOCALHOST_ONLY=1" >> ~/.bashrc
+# RUN echo '# ROS2 RTPS network' >> ~/.bashrc && \
+#     echo 'export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST' >> ~/.bashrc && \
+#     echo 'export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' >> ~/.bashrc && \
+#     echo 'export ROS_DOMAIN_ID=10' >> ~/.bashrc && \
+#     #echo 'export CYCLONEDDS_URI=file:///home/ws_ros2/cyclone_dds_config.xml' >> ~/.bashrc && \
+#     echo "export ROS_LOCALHOST_ONLY=1" >> ~/.bashrc
+
+# Drone slung load environment variables
+ENV FIRST_DRONE_ID=1
+
+# Chrony (for time synchronization when flying without a central router)
+#ENV IP_ADDR_CHRN=192.168.4.1
+
+# Slung fleet IP addresses
+ENV IP_ADDR_DRONE1=192.168.0.112
+ENV IP_ADDR_DRONE2=192.168.0.158
+ENV IP_ADDR_DRONE3=192.168.0.108
+ENV IP_ADDR_LOAD1=192.168.0.139
+
+ENV IP_ADDR_MOCAP=192.168.0.20
+
+# ROS/DDS
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+ENV ROS_DOMAIN_ID=10
+
+ENV ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+ENV ROS_LOCALHOST_ONLY=1 
+
+# ENV CYCLONEDDS_URI=file:///home/ws_ros2/cyclone_dds_config.xml
+# ENV FASTRTPS_DEFAULT_PROFILES_FILE /home/ws_ros2/fast_dds_config.xml
 
 
 ##############
@@ -328,6 +353,9 @@ RUN echo 'alias zenoh_drone="bash /home/ws_ros2/src/zenoh_vendor/tools/zenoh_dro
 
 RUN echo 'alias edit_bashrc="nano /home/.bashrc"' >> ~/.bashrc
 
+RUN echo 'alias drone_kill="tmux kill-session -t phys_drone"' >> ~/.bashrc
+RUN echo 'alias drone_start="bash /home/ws_ros2/start.sh"' >> ~/.bashrc
+RUN echo 'alias tmux_drone="tmux attach-session -t phys_drone"' >> ~/.bashrc
 
 ##############
 ### START ##
@@ -337,11 +365,6 @@ RUN echo 'alias edit_bashrc="nano /home/.bashrc"' >> ~/.bashrc
 CMD ["/home/ws_ros2/start.sh"]
 
 ### COMMANDS 
-# Building this dockerfile with ARGS
-# docker build --build-arg SSH_PRIVATE_KEY="$(cat /home/harvey/.ssh/id_ed25519)" -f dockerfile_drone -t drone:first . #--no-cache
-# When deploying in Balena, use in ENV variable for SSH_PRIVATE_KEY_ENV_VAR_GH instead
-
-
 # In dev container
 # Building: 
 #   cd /multi_drone_slung_load_master
@@ -351,11 +374,21 @@ CMD ["/home/ws_ros2/start.sh"]
 # - Normal start: docker run --rm -it drone:latest
 # - Interactive start: docker run --rm -it drone:latest bash
 
+# Deploying to Balena:
+#   Using cloud: balena push slung_load_nuc
+#   Locally - uses docker-compose and .dockerignore in project root  (much faster for development, make sure device is in local mode).
+#     NOTE: changes don't persist across reboots, so use cloud push if save required. 
+#       - cd /multi_drone_slung_load_master
+#       - balena push 192.168.3.244
 
+
+
+# Building this dockerfile with ARGS
+# docker build --build-arg SSH_PRIVATE_KEY="$(cat /home/harvey/.ssh/id_ed25519)" -f dockerfile_drone -t drone:first . #--no-cache
+# When deploying in Balena, use in ENV variable for SSH_PRIVATE_KEY_ENV_VAR_GH instead
 
 # Running dockerfile interactively (useful if using CMD ["bash"])
 # docker run --tty -it drone:first
-
 
 # GUI Forwarding: docker run --tty -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro -it drone:first
 # Need to run "xhost +" on host machine first
