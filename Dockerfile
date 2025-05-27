@@ -311,8 +311,6 @@ COPY ${BUILD_CONTEXT_OFFBOARD}/start.sh /home/ws_ros2/start.sh
 #     #echo 'export CYCLONEDDS_URI=file:///home/ws_ros2/cyclone_dds_config.xml' >> ~/.bashrc && \
 #     echo "export ROS_LOCALHOST_ONLY=1" >> ~/.bashrc
 
-# Drone slung load environment variables
-ENV FIRST_DRONE_ID=1
 
 # Chrony (for time synchronization when flying without a central router)
 #ENV IP_ADDR_CHRN=192.168.4.1
@@ -335,6 +333,13 @@ ENV ROS_LOCALHOST_ONLY=1
 # ENV CYCLONEDDS_URI=file:///home/ws_ros2/cyclone_dds_config.xml
 # ENV FASTRTPS_DEFAULT_PROFILES_FILE /home/ws_ros2/fast_dds_config.xml
 
+# Drone slung load environment variables - OVERRIDE IN BALENA CLOUD AS REQUIRED
+ENV FIRST_DRONE_ID=1
+
+ENV DEVICE_ROLE=drone
+ENV DRONE_ID=1
+#ENV LOAD_ID=1
+#ENV IP_ADDR_ETH=192.168.4.1
 
 ##############
 ### ALIASES ##
