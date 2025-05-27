@@ -98,6 +98,9 @@ RUN apt-get update \
   && apt-get install -y build-essential cmake \
   && apt-get install -y nano \
   && apt-get install -y iproute2 \
+  && apt-get install -y iputils-ping \
+  && apt-get install -y tmux \
+  && apt-get install -y unzip \
   && apt-get --reinstall install coreutils \
   && rm -rf /var/lib/apt/lists/*
 
@@ -110,8 +113,6 @@ RUN apt-get update -y && \
     apt-get upgrade -y &&\ 
     apt-get install chrony 
     #&& \rm -rf /tmp/* /var/cache/apk/*
-
-
 
 # Setup dockerfile for installation
 WORKDIR /home
@@ -272,18 +273,11 @@ RUN cd ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/multi_drone_slun
 # NUC: cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../frame_transforms.so
 # RPI: cp frame_transforms.cpython-310-aarch64-linux-gnu.so ../../frame_transforms.so
 
-# ******* MOVE EARLIER *******
-RUN apt-get update && apt install -y unzip
-
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
     colcon build --packages-select  multi_drone_slung_load_interfaces multi_drone_slung_load multi_drone_slung_load_cpp zenoh_vendor
 
 # manif kalmanif slung_pose_measurement slung_pose_estimation 
-
-# ******* MOVE EARLIER *******
-RUN apt-get update && apt install -y tmux && \
-    apt-get install -y iputils-ping
 
 ##############
 ### SETUP ##
