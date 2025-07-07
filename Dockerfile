@@ -268,10 +268,10 @@ RUN cd ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/multi_drone_slun
     cd build && \
     cmake .. && \
     make && \
-    cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../frame_transforms.so
+    cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
     
-# NUC: cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../frame_transforms.so
-# RPI: cp frame_transforms.cpython-310-aarch64-linux-gnu.so ../../frame_transforms.so
+# NUC: cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
+# RPI: cp frame_transforms.cpython-310-aarch64-linux-gnu.so ../../_frame_transforms.so
 
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
