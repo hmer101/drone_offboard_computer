@@ -256,7 +256,7 @@ COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load_interfaces /home/w
 COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load /home/ws_ros2/src/multi_drone_slung_load/
 COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load_cpp /home/ws_ros2/src/multi_drone_slung_load_cpp/
 COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/zenoh_vendor /home/ws_ros2/src/zenoh_vendor/
-#COPY ws_ros2/src/slung_pose_measurement /home/ws_ros2/src/slung_pose_measurement/
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/slung_pose_measurement /home/ws_ros2/src/slung_pose_measurement/
 #COPY ws_ros2/src/slung_pose_estimation /home/ws_ros2/src/slung_pose_estimation/
 
 # Build remaining parts of colcon workspace
@@ -275,9 +275,9 @@ RUN cd ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/multi_drone_slun
 
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select  multi_drone_slung_load_interfaces multi_drone_slung_load multi_drone_slung_load_cpp zenoh_vendor
+    colcon build --packages-select  multi_drone_slung_load_interfaces multi_drone_slung_load multi_drone_slung_load_cpp zenoh_vendor slung_pose_measurement
 
-# manif kalmanif slung_pose_measurement slung_pose_estimation 
+# manif kalmanif slung_pose_estimation 
 
 ##############
 ### SETUP ##
