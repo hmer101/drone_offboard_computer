@@ -220,12 +220,6 @@ COPY ${BUILD_CONTEXT_ROOT}/requirements.txt /home/requirements.txt
 RUN . /opt/ros/humble/setup.sh && \
     pip install -r requirements.txt
 
-# Python
-# RUN cd /home/ws_ros2/src/drone_misc && \
-#     . /opt/ros/humble/setup.sh && \
-#     pip install -r requirements.txt
-
-
 ##############
 ### ROS2 - build ###
 ##############
@@ -299,14 +293,6 @@ COPY ${BUILD_CONTEXT_OFFBOARD}/start.sh /home/ws_ros2/start.sh
 ##############
 ### VARIABLES ##
 ##############
-# RUN echo '# ROS2 RTPS network' >> ~/.bashrc && \
-#     echo 'export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST' >> ~/.bashrc && \
-#     echo 'export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' >> ~/.bashrc && \
-#     echo 'export ROS_DOMAIN_ID=10' >> ~/.bashrc && \
-#     #echo 'export CYCLONEDDS_URI=file:///home/ws_ros2/cyclone_dds_config.xml' >> ~/.bashrc && \
-#     echo "export ROS_LOCALHOST_ONLY=1" >> ~/.bashrc
-
-
 # Chrony (for time synchronization when flying without a central router)
 #ENV IP_ADDR_CHRN=192.168.4.1
 
