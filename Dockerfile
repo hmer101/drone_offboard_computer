@@ -234,45 +234,35 @@ RUN cd /home/ws_ros2 && \
 
 
 # Copy in sometimes changed repos
-# COPY ws_ros2/src/px4_msgs /home/ws_ros2/src/px4_msgs
-# COPY ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
-COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
+#COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
 
 # Build second part of workspace
-RUN cd /home/ws_ros2 && \ 
-    . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select highbay_vicon_px4
+# RUN cd /home/ws_ros2 && \ 
+#     . /opt/ros/humble/setup.sh && \
+#     colcon build --packages-select highbay_vicon_px4
 #px4_msgs
 
 
 # Copy in frequently changed repos
-COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load_interfaces /home/ws_ros2/src/multi_drone_slung_load_interfaces/
-COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load /home/ws_ros2/src/multi_drone_slung_load/
-COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load_cpp /home/ws_ros2/src/multi_drone_slung_load_cpp/
 COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/zenoh_vendor /home/ws_ros2/src/zenoh_vendor/
-COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/slung_pose_measurement /home/ws_ros2/src/slung_pose_measurement/
-#COPY ws_ros2/src/slung_pose_estimation /home/ws_ros2/src/slung_pose_estimation/
 
 # Build remaining parts of colcon workspace
 # Make frame transforms .so
-RUN cd ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_transforms && \
-    rm -rf build && \
-    . /opt/ros/humble/setup.sh && \
-    mkdir -p build && \
-    cd build && \
-    cmake .. && \
-    make && \
-    cp _frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
-#cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
+# RUN cd ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_transforms && \
+#     rm -rf build && \
+#     . /opt/ros/humble/setup.sh && \
+#     mkdir -p build && \
+#     cd build && \
+#     cmake .. && \
+#     make && \
+#     cp _frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
     
 # NUC: cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
 # RPI: cp frame_transforms.cpython-310-aarch64-linux-gnu.so ../../_frame_transforms.so
 
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select  multi_drone_slung_load_interfaces multi_drone_slung_load multi_drone_slung_load_cpp zenoh_vendor slung_pose_measurement
-
-# manif kalmanif slung_pose_estimation 
+    colcon build --packages-select zenoh_vendor
 
 ##############
 ### SETUP ##
@@ -297,12 +287,7 @@ COPY ${BUILD_CONTEXT_OFFBOARD}/start.sh /home/ws_ros2/start.sh
 #ENV IP_ADDR_CHRN=192.168.4.1
 
 # Slung fleet IP addresses
-ENV IP_ADDR_DRONE1=192.168.0.110
-ENV IP_ADDR_DRONE2=192.168.0.158
-ENV IP_ADDR_DRONE3=192.168.0.108
-ENV IP_ADDR_LOAD1=192.168.0.139
-
-ENV IP_ADDR_MOCAP=192.168.0.20
+#ENV IP_ADDR_DRONE1=192.168.0.42
 
 # ROS/DDS
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -319,8 +304,6 @@ ENV FIRST_DRONE_ID=1
 
 ENV DEVICE_ROLE=drone
 ENV DRONE_ID=1
-#ENV LOAD_ID=1
-#ENV IP_ADDR_ETH=192.168.4.1
 
 ##############
 ### ALIASES ##
