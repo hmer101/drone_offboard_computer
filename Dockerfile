@@ -124,20 +124,6 @@ ENV BUILD_CONTEXT_OFFBOARD=${BUILD_CONTEXT_ROOT}/repos/drone_offboard_computer
 # COPY ${BUILD_CONTEXT_OFFBOARD}/chrony_client.conf.template /etc/chrony/chrony_client.conf
 # COPY ${BUILD_CONTEXT_OFFBOARD}/chrony_server.conf.template /etc/chrony/chrony_server.conf
 
-# WiFi extender driver
-# Note: driver must be installed directly on host machine instead using:  sh -c 'wget linux.brostrend.com/install -O /tmp/install && sh /tmp/install'
-# instructions here: https://linux.brostrend.com/
-# RUN apt-get update && apt-get install -y wget expect \
-#     && wget -qO /tmp/install http://linux.brostrend.com/install \
-#     && chmod +x /tmp/install \
-#     && expect -c ' \
-#         spawn sh /tmp/install; \
-#         expect "Please type your choice, or \\\[Enter\\\] to autodetect:" {send "c\\r"}; \
-#         expect eof' \
-#     && apt-get clean \
-#     && rm -rf /var/lib/apt/lists/* /tmp/install
-
-
 ##############
 ### GITHUB ###
 ##############
@@ -147,15 +133,15 @@ ENV BUILD_CONTEXT_OFFBOARD=${BUILD_CONTEXT_ROOT}/repos/drone_offboard_computer
 RUN mkdir -p /home/repos
 
 # Argument to pass the SSH private key
-ENV SSH_PRIVATE_KEY_ENV_VAR_GH="REMOVED_PRIVATE_KEY"
+# ENV SSH_PRIVATE_KEY_ENV_VAR_GH="REMOVED_PRIVATE_KEY"
 
-# Authorize SSH Host, add the private key and start ssh-agent
-RUN mkdir -p /root/.ssh && \
-    echo "Host github.com\n\tStrictHostKeyChecking no\n" >> /root/.ssh/config && \
-    echo "REMOVED_PRIVATE_KEY\n"> /root/.ssh/id_ed25519 && \ 
-    chmod 600 /root/.ssh/id_ed25519 && \
-    eval $(ssh-agent -s) && \
-    ssh-add /root/.ssh/id_ed25519
+# # Authorize SSH Host, add the private key and start ssh-agent
+# RUN mkdir -p /root/.ssh && \
+#     echo "Host github.com\n\tStrictHostKeyChecking no\n" >> /root/.ssh/config && \
+#     echo "REMOVED_PRIVATE_KEY\n"> /root/.ssh/id_ed25519 && \ 
+#     chmod 600 /root/.ssh/id_ed25519 && \
+#     eval $(ssh-agent -s) && \
+#     ssh-add /root/.ssh/id_ed25519
 
 
 
@@ -354,7 +340,7 @@ CMD ["/home/ws_ros2/start.sh"]
 
 # Building this dockerfile with ARGS
 # docker build --build-arg SSH_PRIVATE_KEY="$(cat /home/harvey/.ssh/id_ed25519)" -f dockerfile_drone -t drone:first . #--no-cache
-# When deploying in Balena, use in ENV variable for SSH_PRIVATE_KEY_ENV_VAR_GH instead
+# When deploying in Balena, use in ENV variable for SSH_PRIVATE_KEY_ENV_VAR_GH instead. Better to not do this at all.
 
 # Running dockerfile interactively (useful if using CMD ["bash"])
 # docker run --tty -it drone:first
