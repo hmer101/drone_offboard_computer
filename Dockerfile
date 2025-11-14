@@ -234,35 +234,38 @@ RUN cd /home/ws_ros2 && \
 
 
 # Copy in sometimes changed repos
-#COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
 
 # Build second part of workspace
-# RUN cd /home/ws_ros2 && \ 
-#     . /opt/ros/humble/setup.sh && \
-#     colcon build --packages-select highbay_vicon_px4
-#px4_msgs
+RUN cd /home/ws_ros2 && \ 
+    . /opt/ros/humble/setup.sh && \
+    colcon build --packages-select highbay_vicon_px4
 
 
 # Copy in frequently changed repos
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load_interfaces /home/ws_ros2/src/multi_drone_slung_load_interfaces/
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load /home/ws_ros2/src/multi_drone_slung_load/
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load_cpp /home/ws_ros2/src/multi_drone_slung_load_cpp/
+COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/slung_pose_measurement /home/ws_ros2/src/slung_pose_measurement/
 COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/zenoh_vendor /home/ws_ros2/src/zenoh_vendor/
 
 # Build remaining parts of colcon workspace
 # Make frame transforms .so
-# RUN cd ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_transforms && \
-#     rm -rf build && \
-#     . /opt/ros/humble/setup.sh && \
-#     mkdir -p build && \
-#     cd build && \
-#     cmake .. && \
-#     make && \
-#     cp _frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
+RUN cd ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_transforms && \
+    rm -rf build && \
+    . /opt/ros/humble/setup.sh && \
+    mkdir -p build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    cp _frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
     
 # NUC: cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
 # RPI: cp frame_transforms.cpython-310-aarch64-linux-gnu.so ../../_frame_transforms.so
 
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select zenoh_vendor
+    colcon build --packages-select zenoh_vendor multi_drone_slung_load_interfaces multi_drone_slung_load multi_drone_slung_load_cpp slung_pose_measurement
 
 ##############
 ### SETUP ##
