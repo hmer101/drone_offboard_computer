@@ -1,69 +1,70 @@
-ARG BASE_IMAGE=ros:humble-perception-jammy
+ARG BASE_IMAGE=ros:humble-ros-base-jammy
+#ARG BASE_IMAGE=ros:humble-perception-jammy
 
-# The following steps are based on the offical multi-stage build: https://github.com/IntelRealSense/librealsense/blob/master/scripts/Docker/Dockerfile
-#################################
-#   Librealsense Builder Stage  #
-#################################
-FROM $BASE_IMAGE as librealsense-builder
+# # The following steps are based on the offical multi-stage build: https://github.com/IntelRealSense/librealsense/blob/master/scripts/Docker/Dockerfile
+# #################################
+# #   Librealsense Builder Stage  #
+# #################################
+# FROM $BASE_IMAGE as librealsense-builder
 
-SHELL ["/bin/bash", "-c"]
+# SHELL ["/bin/bash", "-c"]
 
-ENV DEBIAN_FRONTEND=noninteractive
+# ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update \
- && apt-get install -qq -y --no-install-recommends \
-    build-essential \
-    cmake \
-    git \
-    libssl-dev \
-    libusb-1.0-0-dev \
-    pkg-config \
-    libgtk-3-dev \
-    libglfw3-dev \
-    libgl1-mesa-dev \
-    libglu1-mesa-dev \    
-    curl \
-    python3 \
-    python3-dev \
-    ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+# RUN apt-get update \
+#  && apt-get install -qq -y --no-install-recommends \
+#     build-essential \
+#     cmake \
+#     git \
+#     libssl-dev \
+#     libusb-1.0-0-dev \
+#     pkg-config \
+#     libgtk-3-dev \
+#     libglfw3-dev \
+#     libgl1-mesa-dev \
+#     libglu1-mesa-dev \    
+#     curl \
+#     python3 \
+#     python3-dev \
+#     ca-certificates \
+#  && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/src
-RUN ln -s /usr/bin/python3 /usr/bin/python
+# WORKDIR /usr/src
+# RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# Get the latest tag of remote repository: https://stackoverflow.com/a/12704727
-# Needs to be a single command as ENV can't be set from Bash command: https://stackoverflow.com/questions/34911622/dockerfile-set-env-to-result-of-command
-RUN export LIBRS_GIT_TAG=`git -c 'versionsort.suffix=-' \
-                         ls-remote --exit-code --refs --sort='version:refname' --tags https://github.com/IntelRealSense/librealsense '*.*.*' \
-                         | tail --lines=1 \
-                         | cut --delimiter='/' --fields=3`; \
-    export LIBRS_VERSION=${LIBRS_VERSION:-${LIBRS_GIT_TAG#"v"}}; \
-    curl https://codeload.github.com/IntelRealSense/librealsense/tar.gz/refs/tags/v${LIBRS_VERSION} -o librealsense.tar.gz; \
-    tar -zxf librealsense.tar.gz; \
-    rm librealsense.tar.gz; \
-    ln -s /usr/src/librealsense-${LIBRS_VERSION} /usr/src/librealsense
+# # Get the latest tag of remote repository: https://stackoverflow.com/a/12704727
+# # Needs to be a single command as ENV can't be set from Bash command: https://stackoverflow.com/questions/34911622/dockerfile-set-env-to-result-of-command
+# RUN export LIBRS_GIT_TAG=`git -c 'versionsort.suffix=-' \
+#                          ls-remote --exit-code --refs --sort='version:refname' --tags https://github.com/IntelRealSense/librealsense '*.*.*' \
+#                          | tail --lines=1 \
+#                          | cut --delimiter='/' --fields=3`; \
+#     export LIBRS_VERSION=${LIBRS_VERSION:-${LIBRS_GIT_TAG#"v"}}; \
+#     curl https://codeload.github.com/IntelRealSense/librealsense/tar.gz/refs/tags/v${LIBRS_VERSION} -o librealsense.tar.gz; \
+#     tar -zxf librealsense.tar.gz; \
+#     rm librealsense.tar.gz; \
+#     ln -s /usr/src/librealsense-${LIBRS_VERSION} /usr/src/librealsense
 
-RUN cd /usr/src/librealsense \
- && mkdir build && cd build \
- && cmake \
-    -DCMAKE_C_FLAGS_RELEASE="${CMAKE_C_FLAGS_RELEASE} -s" \
-    -DCMAKE_CXX_FLAGS_RELEASE="${CMAKE_CXX_FLAGS_RELEASE} -s" \
-    -DCMAKE_INSTALL_PREFIX=/opt/librealsense \    
-    -DBUILD_GRAPHICAL_EXAMPLES=OFF \
-    -DBUILD_PYTHON_BINDINGS:bool=true \
-    -DPYTHON_EXECUTABLE=/usr/bin/python3 \
-    -DFORCE_RSUSB_BACKEND=TRUE \
-    -DCMAKE_BUILD_TYPE=Release ../ \
- && make -j$(($(nproc)-1)) all \
- && make install
+# RUN cd /usr/src/librealsense \
+#  && mkdir build && cd build \
+#  && cmake \
+#     -DCMAKE_C_FLAGS_RELEASE="${CMAKE_C_FLAGS_RELEASE} -s" \
+#     -DCMAKE_CXX_FLAGS_RELEASE="${CMAKE_CXX_FLAGS_RELEASE} -s" \
+#     -DCMAKE_INSTALL_PREFIX=/opt/librealsense \    
+#     -DBUILD_GRAPHICAL_EXAMPLES=OFF \
+#     -DBUILD_PYTHON_BINDINGS:bool=true \
+#     -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+#     -DFORCE_RSUSB_BACKEND=TRUE \
+#     -DCMAKE_BUILD_TYPE=Release ../ \
+#  && make -j$(($(nproc)-1)) all \
+#  && make install
 
 ######################################
 #   librealsense Base Image Stage    #
 ######################################
 FROM ${BASE_IMAGE} as librealsense
 
-COPY --from=librealsense-builder /opt/librealsense /usr/local/
-COPY --from=librealsense-builder /usr/src/librealsense/config/99-realsense-libusb.rules /etc/udev/rules.d/
+# COPY --from=librealsense-builder /opt/librealsense /usr/local/
+# COPY --from=librealsense-builder /usr/src/librealsense/config/99-realsense-libusb.rules /etc/udev/rules.d/
 ENV PYTHONPATH=${PYTHONPATH}:/usr/local/lib
 
 
@@ -101,6 +102,7 @@ RUN apt-get update \
   && apt-get install -y iputils-ping \
   && apt-get install -y tmux \
   && apt-get install -y unzip \
+  && apt-get install -y libopencv-dev \
   && apt-get --reinstall install coreutils \
   && rm -rf /var/lib/apt/lists/*
 
@@ -109,10 +111,9 @@ RUN apt-get update \
 RUN pip install --upgrade pip
 
 # Setup chrony
-RUN apt-get update -y && \ 
-    apt-get upgrade -y &&\ 
-    apt-get install chrony 
-    #&& \rm -rf /tmp/* /var/cache/apk/*
+# RUN apt-get update -y && \ 
+#     apt-get upgrade -y &&\ 
+#     apt-get install chrony 
 
 # Setup dockerfile for installation
 WORKDIR /home
@@ -120,9 +121,8 @@ WORKDIR /home
 ENV BUILD_CONTEXT_ROOT=. 
 ENV BUILD_CONTEXT_OFFBOARD=${BUILD_CONTEXT_ROOT}/repos/drone_offboard_computer
 
-COPY ${BUILD_CONTEXT_OFFBOARD}/chrony_client.conf.template /etc/chrony/chrony_client.conf
-COPY ${BUILD_CONTEXT_OFFBOARD}/chrony_server.conf.template /etc/chrony/chrony_server.conf
-#EXPOSE 123/udp
+# COPY ${BUILD_CONTEXT_OFFBOARD}/chrony_client.conf.template /etc/chrony/chrony_client.conf
+# COPY ${BUILD_CONTEXT_OFFBOARD}/chrony_server.conf.template /etc/chrony/chrony_server.conf
 
 # WiFi extender driver
 # Note: driver must be installed directly on host machine instead using:  sh -c 'wget linux.brostrend.com/install -O /tmp/install && sh /tmp/install'
@@ -220,12 +220,6 @@ COPY ${BUILD_CONTEXT_ROOT}/requirements.txt /home/requirements.txt
 RUN . /opt/ros/humble/setup.sh && \
     pip install -r requirements.txt
 
-# Python
-# RUN cd /home/ws_ros2/src/drone_misc && \
-#     . /opt/ros/humble/setup.sh && \
-#     pip install -r requirements.txt
-
-
 ##############
 ### ROS2 - build ###
 ##############
@@ -240,44 +234,35 @@ RUN cd /home/ws_ros2 && \
 
 
 # Copy in sometimes changed repos
-# COPY ws_ros2/src/px4_msgs /home/ws_ros2/src/px4_msgs
-# COPY ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
-COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
+#COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/highbay_vicon_px4 /home/ws_ros2/src/highbay_vicon_px4/
 
 # Build second part of workspace
-RUN cd /home/ws_ros2 && \ 
-    . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select highbay_vicon_px4
+# RUN cd /home/ws_ros2 && \ 
+#     . /opt/ros/humble/setup.sh && \
+#     colcon build --packages-select highbay_vicon_px4
 #px4_msgs
 
 
 # Copy in frequently changed repos
-COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load_interfaces /home/ws_ros2/src/multi_drone_slung_load_interfaces/
-COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load /home/ws_ros2/src/multi_drone_slung_load/
-COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load_cpp /home/ws_ros2/src/multi_drone_slung_load_cpp/
 COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/zenoh_vendor /home/ws_ros2/src/zenoh_vendor/
-COPY ${BUILD_CONTEXT_ROOT}/ws_ros2/src/slung_pose_measurement /home/ws_ros2/src/slung_pose_measurement/
-#COPY ws_ros2/src/slung_pose_estimation /home/ws_ros2/src/slung_pose_estimation/
 
 # Build remaining parts of colcon workspace
 # Make frame transforms .so
-RUN cd ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_transforms && \
-    rm -rf build && \
-    . /opt/ros/humble/setup.sh && \
-    mkdir -p build && \
-    cd build && \
-    cmake .. && \
-    make && \
-    cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
+# RUN cd ${BUILD_CONTEXT_ROOT}/ws_ros2/src/multi_drone_slung_load/multi_drone_slung_load/frame_transforms && \
+#     rm -rf build && \
+#     . /opt/ros/humble/setup.sh && \
+#     mkdir -p build && \
+#     cd build && \
+#     cmake .. && \
+#     make && \
+#     cp _frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
     
 # NUC: cp frame_transforms.cpython-310-x86_64-linux-gnu.so ../../_frame_transforms.so
 # RPI: cp frame_transforms.cpython-310-aarch64-linux-gnu.so ../../_frame_transforms.so
 
 RUN cd /home/ws_ros2 && \ 
     . /opt/ros/humble/setup.sh && \
-    colcon build --packages-select  multi_drone_slung_load_interfaces multi_drone_slung_load multi_drone_slung_load_cpp zenoh_vendor slung_pose_measurement
-
-# manif kalmanif slung_pose_estimation 
+    colcon build --packages-select zenoh_vendor
 
 ##############
 ### SETUP ##
@@ -298,24 +283,11 @@ COPY ${BUILD_CONTEXT_OFFBOARD}/start.sh /home/ws_ros2/start.sh
 ##############
 ### VARIABLES ##
 ##############
-# RUN echo '# ROS2 RTPS network' >> ~/.bashrc && \
-#     echo 'export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST' >> ~/.bashrc && \
-#     echo 'export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' >> ~/.bashrc && \
-#     echo 'export ROS_DOMAIN_ID=10' >> ~/.bashrc && \
-#     #echo 'export CYCLONEDDS_URI=file:///home/ws_ros2/cyclone_dds_config.xml' >> ~/.bashrc && \
-#     echo "export ROS_LOCALHOST_ONLY=1" >> ~/.bashrc
-
-
 # Chrony (for time synchronization when flying without a central router)
 #ENV IP_ADDR_CHRN=192.168.4.1
 
 # Slung fleet IP addresses
-ENV IP_ADDR_DRONE1=192.168.0.112
-ENV IP_ADDR_DRONE2=192.168.0.158
-ENV IP_ADDR_DRONE3=192.168.0.108
-ENV IP_ADDR_LOAD1=192.168.0.139
-
-ENV IP_ADDR_MOCAP=192.168.0.20
+#ENV IP_ADDR_DRONE1=192.168.0.42
 
 # ROS/DDS
 ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
@@ -332,8 +304,6 @@ ENV FIRST_DRONE_ID=1
 
 ENV DEVICE_ROLE=drone
 ENV DRONE_ID=1
-#ENV LOAD_ID=1
-#ENV IP_ADDR_ETH=192.168.4.1
 
 ##############
 ### ALIASES ##

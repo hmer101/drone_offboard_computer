@@ -1,5 +1,0 @@
-# Use a lightweight base image, such as Alpine
-FROM alpine:latest
-
-# Run an infinite command to keep the container running
-CMD ["tail", "-f", "/dev/null"]
