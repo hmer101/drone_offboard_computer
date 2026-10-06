@@ -146,18 +146,8 @@ ENV BUILD_CONTEXT_OFFBOARD=${BUILD_CONTEXT_ROOT}/repos/drone_offboard_computer
 # Create a directory to hold the repositories
 RUN mkdir -p /home/repos
 
-# Argument to pass the SSH private key
-ENV SSH_PRIVATE_KEY_ENV_VAR_GH="REMOVED_PRIVATE_KEY"
-
-# Authorize SSH Host, add the private key and start ssh-agent
-RUN mkdir -p /root/.ssh && \
-    echo "Host github.com\n\tStrictHostKeyChecking no\n" >> /root/.ssh/config && \
-    echo "REMOVED_PRIVATE_KEY\n"> /root/.ssh/id_ed25519 && \ 
-    chmod 600 /root/.ssh/id_ed25519 && \
-    eval $(ssh-agent -s) && \
-    ssh-add /root/.ssh/id_ed25519
-
-
+# Repository sources are copied from the build context below.
+# Keep SSH keys and authentication out of image layers.
 
 ##############
 ### ROS2 - setup ###
@@ -355,9 +345,7 @@ CMD ["/home/ws_ros2/start.sh"]
 
 
 
-# Building this dockerfile with ARGS
-# docker build --build-arg SSH_PRIVATE_KEY="$(cat /home/harvey/.ssh/id_ed25519)" -f dockerfile_drone -t drone:first . #--no-cache
-# When deploying in Balena, use in ENV variable for SSH_PRIVATE_KEY_ENV_VAR_GH instead
+# Build from local source without passing SSH keys or tokens.
 
 # Running dockerfile interactively (useful if using CMD ["bash"])
 # docker run --tty -it drone:first
